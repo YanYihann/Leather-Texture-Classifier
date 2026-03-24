@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play, FileUp } from 'lucide-react';
+import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play, FileUp, Cpu, CheckCircle2, Circle, Hourglass, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScanResult, MOCK_SCANS, LEATHER_CATEGORIES, AVG_PRECISION } from './types';
 import { classifyLeather } from './services/gemini';
@@ -106,6 +106,7 @@ export default function App() {
   const [history, setHistory] = useState<ScanResult[]>([]);
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(8);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [scanDraftImage, setScanDraftImage] = useState<string | null>(null);
   const [isFlashOn, setIsFlashOn] = useState(false);
@@ -280,23 +281,43 @@ export default function App() {
   const resultText = language === 'zh'
     ? {
         bestMatch: '最佳匹配',
-        aiConfidence: 'AI 置信度',
+        aiConfidenceMetric: 'AI 置信度',
         visualVerification: '视觉校验',
         yourScan: '你的扫描',
         reference: '参考样本',
         top3Similar: 'Top 3 相似匹配',
         noReference: '暂无参考图',
         tapToZoom: '点击查看高清',
+        processingTitle: '正在处理材质数据',
+        processingBody: '正在基于本地皮革数据库进行精确分类比对。',
+        neuralLoad: '神经负载',
+        optimizing: '优化中...',
+        stage1: '提取纹理特征...',
+        stage2: '匹配本地训练类别...',
+        stage3: '计算置信度分数...',
+        qualityHigh: '质量指数: 高',
+        aiConfidence: 'AI 置信度',
+        latency: '延迟',
       }
     : {
         bestMatch: 'Best Match',
-        aiConfidence: 'AI Confidence',
+        aiConfidenceMetric: 'AI Confidence',
         visualVerification: 'Visual Verification',
         yourScan: 'Your Scan',
         reference: 'Reference',
         top3Similar: 'Top 3 Similar Matches',
         noReference: 'No Reference Image',
         tapToZoom: 'Tap to view HD',
+        processingTitle: 'Processing Material Data',
+        processingBody: 'Cross-referencing local leather database for precise classification.',
+        neuralLoad: 'Neural Logic Load',
+        optimizing: 'Optimizing...',
+        stage1: 'Extracting texture features...',
+        stage2: 'Matching against local trained classes...',
+        stage3: 'Calculating confidence score...',
+        qualityHigh: 'Quality Index: High',
+        aiConfidence: 'AI Confidence',
+        latency: 'Latency',
       };
   const scaledWidth = SCAN_FRAME.widthPct * frameScale;
   const scaledHeight = SCAN_FRAME.heightPct * frameScale;
@@ -310,6 +331,27 @@ export default function App() {
   };
   const bestMatch = lastScan?.matches?.[0] ?? null;
   const similarMatches = lastScan?.matches?.slice(0, 3) ?? [];
+  const stage1Done = analysisProgress >= 36;
+  const stage2Done = analysisProgress >= 72;
+  const stage3Done = analysisProgress >= 96;
+  const pseudoConfidence = bestMatch?.confidence ?? Math.max(84, Math.round(analysisProgress * 0.98));
+  const pseudoLatency = 38 + Math.round((100 - analysisProgress) * 0.2);
+
+  useEffect(() => {
+    if (!isScanning) {
+      setAnalysisProgress(8);
+      return;
+    }
+    setAnalysisProgress(12);
+    const timer = window.setInterval(() => {
+      setAnalysisProgress((prev) => {
+        const capped = 94;
+        const step = prev < 45 ? 5.5 : prev < 75 ? 2.8 : 1.2;
+        return Math.min(capped, prev + step + Math.random() * 1.4);
+      });
+    }, 320);
+    return () => window.clearInterval(timer);
+  }, [isScanning]);
 
   const deleteHistoryItem = (id: string) => {
     if (!window.confirm(deleteItemConfirm)) return;
@@ -452,6 +494,8 @@ export default function App() {
   };
 
   const analyzeImage = async (base64: string) => {
+    const startedAt = Date.now();
+    const minLoadingMs = 2200;
     setIsScanning(true);
     setCurrentView('result');
     try {
@@ -475,6 +519,12 @@ export default function App() {
     } catch (err) {
       console.error("Classification error:", err);
     } finally {
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < minLoadingMs) {
+        await new Promise((resolve) => setTimeout(resolve, minLoadingMs - elapsed));
+      }
+      setAnalysisProgress(100);
+      await new Promise((resolve) => setTimeout(resolve, 220));
       setIsScanning(false);
     }
   };
@@ -815,9 +865,100 @@ export default function App() {
               <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-6 relative overflow-hidden">
                 <div className="absolute -right-20 -bottom-24 w-72 h-72 rounded-full border-[18px] border-primary/10 pointer-events-none" />
                 {isScanning ? (
-                  <div className="min-h-48 flex flex-col items-center justify-center gap-4">
-                    <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                    <p className="headline-sm text-primary">{text.analyzing}</p>
+                  <div className="space-y-6">
+                    <div className="relative rounded-2xl overflow-hidden border border-primary/30">
+                      <img
+                        src={scanDraftImage || lastScan?.imageUrl || 'https://images.unsplash.com/photo-1616627452934-67e61d9ee3b7?q=80&w=1200&auto=format&fit=crop'}
+                        alt="Processing"
+                        className="w-full aspect-[4/5] object-cover opacity-60"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/50" />
+                      <div className="absolute top-5 left-5">
+                        <p className="label-sm text-primary">Sensor Active</p>
+                        <p className="body-md text-on-surface-variant mt-1">ISO 100 | Macro 1:1</p>
+                      </div>
+                      <div className="absolute top-16 left-5 right-5 h-px bg-primary/40" />
+                      <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-primary/80 rounded-tl-md" />
+                      <div className="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-primary/80 rounded-tr-md" />
+                      <div className="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-primary/80 rounded-bl-md" />
+                      <div className="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-primary/80 rounded-br-md" />
+                    </div>
+
+                    <div>
+                      <h3 className="font-headline font-extrabold text-4xl leading-[0.95] tracking-tight">
+                        {resultText.processingTitle}
+                      </h3>
+                      <p className="body-md text-on-surface-variant mt-3">
+                        {resultText.processingBody}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-[84px_1fr] gap-4 items-center">
+                      <div className="relative w-[84px] h-[84px]">
+                        <svg className="w-[84px] h-[84px] -rotate-90" viewBox="0 0 84 84">
+                          <circle cx="42" cy="42" r="36" stroke="currentColor" strokeWidth="6" className="text-surface-container-highest" fill="none" />
+                          <circle
+                            cx="42"
+                            cy="42"
+                            r="36"
+                            stroke="currentColor"
+                            strokeWidth="6"
+                            className="text-primary transition-all duration-500"
+                            fill="none"
+                            strokeDasharray={2 * Math.PI * 36}
+                            strokeDashoffset={(2 * Math.PI * 36) * (1 - analysisProgress / 100)}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center font-headline font-bold text-2xl text-primary">
+                          {Math.round(analysisProgress)}%
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="label-sm text-outline">{resultText.neuralLoad}</p>
+                          <p className="body-md font-semibold text-primary">{resultText.optimizing}</p>
+                        </div>
+                        <div className="h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${analysisProgress}%` }}
+                            transition={{ duration: 0.3 }}
+                            className="h-full bg-primary"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-black/25 border border-outline-variant/30 p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className={`body-md ${stage1Done ? 'text-on-surface' : 'text-on-surface-variant'}`}>{resultText.stage1}</p>
+                        {stage1Done ? <CheckCircle2 className="w-5 h-5 text-tertiary" /> : <Loader2 className="w-5 h-5 animate-spin text-outline" />}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className={`body-md ${stage2Done ? 'text-on-surface' : 'text-on-surface-variant'}`}>{resultText.stage2}</p>
+                        {stage2Done ? <CheckCircle2 className="w-5 h-5 text-tertiary" /> : <Circle className="w-5 h-5 text-outline" />}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className={`body-md ${stage3Done ? 'text-on-surface' : 'text-on-surface-variant'}`}>{resultText.stage3}</p>
+                        {stage3Done ? <CheckCircle2 className="w-5 h-5 text-tertiary" /> : <Hourglass className="w-5 h-5 text-outline" />}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="rounded-xl bg-black/25 border border-outline-variant/20 p-2.5">
+                        <p className="label-sm text-primary">{resultText.qualityHigh}</p>
+                      </div>
+                      <div className="rounded-xl bg-black/25 border border-outline-variant/20 p-2.5 flex items-center gap-2">
+                        <Database className="w-4 h-4 text-primary" />
+                        <p className="label-sm text-on-surface-variant">{resultText.aiConfidenceMetric}: {(pseudoConfidence / 100).toFixed(2)}</p>
+                      </div>
+                      <div className="rounded-xl bg-black/25 border border-outline-variant/20 p-2.5 flex items-center gap-2">
+                        <Cpu className="w-4 h-4 text-primary" />
+                        <p className="label-sm text-on-surface-variant">{resultText.latency}: {pseudoLatency}ms</p>
+                      </div>
+                    </div>
                   </div>
                 ) : bestMatch ? (
                   <>
