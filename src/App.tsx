@@ -546,7 +546,7 @@ export default function App() {
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-surface-container-lowest/60 backdrop-blur-md border border-outline-variant/10">
                     <span className="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#e9c349]" />
-                    <span className="font-label text-[10px] font-medium uppercase tracking-widest">{text.modelReady}</span>
+                    <span className="label-sm">{text.modelReady}</span>
                   </div>
                   <h2 className="font-headline font-extrabold text-4xl tracking-tight leading-tight mb-2">{text.heroTitle}</h2>
                   <p className="font-body text-on-surface-variant text-sm max-w-sm leading-relaxed">{text.heroDesc}</p>
@@ -572,12 +572,12 @@ export default function App() {
               {/* Stats */}
               <section className="grid grid-cols-2 gap-4">
                 <div className="bg-surface-container-low p-5 rounded-xl border-l-4 border-primary">
-                  <p className="font-label text-[10px] uppercase tracking-widest text-outline mb-1">{text.database}</p>
+                  <p className="label-sm text-outline mb-1">{text.database}</p>
                   <p className="font-headline font-bold text-2xl text-primary">{LEATHER_CATEGORIES}</p>
                   <p className="font-body text-[11px] text-on-surface-variant leading-tight">{text.categoriesDesc}</p>
                 </div>
                 <div className="bg-surface-container-low p-5 rounded-xl border-l-4 border-tertiary">
-                  <p className="font-label text-[10px] uppercase tracking-widest text-outline mb-1">{text.precision}</p>
+                  <p className="label-sm text-outline mb-1">{text.precision}</p>
                   <p className="font-headline font-bold text-2xl text-tertiary">{AVG_PRECISION}%</p>
                   <p className="font-body text-[11px] text-on-surface-variant leading-tight">{text.precisionDesc}</p>
                 </div>
@@ -587,7 +587,7 @@ export default function App() {
               <section>
                 <div className="flex justify-between items-end mb-6">
                   <div>
-                    <h3 className="font-headline font-bold text-xl tracking-tight">{text.recentScans}</h3>
+                    <h3 className="headline-sm mt-4 tracking-tight">{text.recentScans}</h3>
                     <p className="font-body text-xs text-outline">{text.recentScansDesc}</p>
                   </div>
                   <button 
@@ -620,13 +620,13 @@ export default function App() {
                         <h4 className="font-headline font-bold text-sm">{scan.matches[0].label}</h4>
                         <div className="flex items-center gap-2 mt-1">
                           <Verified className="w-3.5 h-3.5 text-tertiary fill-current" />
-                          <span className="font-body text-xs text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
+                          <span className="body-md text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
                         </div>
-                        <p className="font-body text-[11px] text-outline mt-1">
+                        <p className="body-md text-outline mt-1">
                           {deviceLabel}: {scan.device || 'Unknown'} | {timeLabel}: {formatToMinute(scan.timestamp)}
                         </p>
                         {scan.note && (
-                          <p className="font-body text-[11px] text-on-surface-variant mt-1">
+                          <p className="body-md text-on-surface-variant mt-1">
                             {noteLabel}: {scan.note}
                           </p>
                         )}
@@ -780,7 +780,7 @@ export default function App() {
                 >
                   <X className="w-6 h-6" />
                 </button>
-                <h2 className="font-headline font-bold text-xl">{text.analysisResult}</h2>
+                <h2 className="headline-sm mt-4">{text.analysisResult}</h2>
                 <div className="w-10" />
               </div>
 
@@ -804,7 +804,7 @@ export default function App() {
               {lastScan && !isScanning && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <p className="font-label text-[10px] uppercase tracking-widest text-outline">{text.topMatches}</p>
+                    <p className="label-sm text-outline">{text.topMatches}</p>
                     <div className="space-y-4">
                       {lastScan.matches.map((match, idx) => (
                         <div key={idx} className="bg-surface-container-low p-4 rounded-xl space-y-3">
@@ -820,9 +820,9 @@ export default function App() {
                               </div>
                             )}
                             <div className="flex-grow">
-                              <div className="flex justify-between items-center mb-1">
-                                <h4 className="font-headline font-bold text-lg">{match.label}</h4>
-                                <span className="font-body font-bold text-primary">{match.confidence}%</span>
+                              <div className={`flex justify-between mb-1 gap-3 ${idx === 0 ? 'items-start' : 'items-center'}`}>
+                                <h4 className={`${idx === 0 ? 'display-lg' : 'headline-sm'} tracking-tight break-words`}>{match.label}</h4>
+                                <span className="body-md font-semibold text-primary">{match.confidence}%</span>
                               </div>
                               <div className="h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
                                 <motion.div 
@@ -835,7 +835,7 @@ export default function App() {
                             </div>
                           </div>
                           {match.description && (
-                            <p className="text-xs text-on-surface-variant leading-relaxed">{match.description}</p>
+                            <p className="body-md text-on-surface-variant leading-relaxed">{match.description}</p>
                           )}
                         </div>
                       ))}
@@ -866,7 +866,7 @@ export default function App() {
                   <button onClick={() => setCurrentView('home')} className="p-2 hover:bg-surface-container-high rounded-lg">
                     <ChevronRight className="w-6 h-6 rotate-180" />
                   </button>
-                  <h2 className="font-headline font-bold text-2xl">{text.scanHistory}</h2>
+                  <h2 className="headline-sm mt-4">{text.scanHistory}</h2>
                 </div>
                 <button
                   onClick={() => {
@@ -913,21 +913,21 @@ export default function App() {
                       )}
                     </div>
                     <div className="flex-grow">
-                      <p className="text-[10px] text-outline uppercase tracking-wider mb-1">
+                      <p className="label-sm text-outline mb-1">
                         {timeLabel}: {formatToMinute(scan.timestamp)}
                       </p>
                       <h4 className="font-headline font-bold text-base">{scan.matches[0].label}</h4>
-                      <p className="font-body text-[11px] text-outline mb-1">
+                      <p className="body-md text-outline mb-1">
                         {deviceLabel}: {scan.device || 'Unknown'}
                       </p>
                       {scan.note && (
-                        <p className="font-body text-[11px] text-on-surface-variant mb-1 line-clamp-2">
+                        <p className="body-md text-on-surface-variant mb-1 line-clamp-2">
                           {noteLabel}: {scan.note}
                         </p>
                       )}
                       <div className="flex items-center gap-2 mt-1">
                         <Verified className="w-3.5 h-3.5 text-tertiary fill-current" />
-                        <span className="font-body text-xs text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
+                        <span className="body-md text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
                         <input
@@ -1011,7 +1011,7 @@ function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: (
       <div className="w-6 h-6 flex items-center justify-center">
         {React.cloneElement(icon as React.ReactElement, { size: 24 })}
       </div>
-      <span className="font-label text-[10px] font-medium uppercase tracking-widest mt-1">{label}</span>
+      <span className="label-sm mt-1">{label}</span>
     </button>
   );
 }
