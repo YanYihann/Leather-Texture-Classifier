@@ -1178,7 +1178,7 @@ export default function App() {
                     <span className="absolute top-3 right-3 label-sm px-3 py-1 rounded-lg bg-tertiary/90 text-on-tertiary">
                       {scan.matches[0].confidence}%
                     </span>
-                    <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                    <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
                       {getPreviewUrl(scan) ? (
                         <img src={getPreviewUrl(scan)} alt={scan.matches[0].label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
@@ -1186,13 +1186,13 @@ export default function App() {
                       )}
                     </div>
                     <div className="flex-grow min-w-0 flex flex-col">
-                      <h4 className="font-headline font-bold text-lg leading-tight pr-20">{scan.matches[0].label}</h4>
+                      <h4 className="font-headline font-bold text-xl leading-tight pr-20">{scan.matches[0].label}</h4>
                       <div className="mt-2 space-y-1">
-                        <p className="body-md text-outline flex items-center gap-2">
+                        <p className="text-base text-outline flex items-center gap-2">
                           <CalendarDays className="w-4 h-4" />
                           {formatHistoryDate(scan.timestamp)}
                         </p>
-                        <p className="body-md text-outline flex items-center gap-2">
+                        <p className="text-base text-outline flex items-center gap-2">
                           <Clock3 className="w-4 h-4" />
                           {formatHistoryTime(scan.timestamp)}
                         </p>
@@ -1203,20 +1203,7 @@ export default function App() {
                         </p>
                       )}
                       <div className="mt-3 flex items-center justify-between">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleHistorySelection(scan.id);
-                          }}
-                          className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
-                            selectedHistoryIds.includes(scan.id)
-                              ? 'bg-primary border-primary text-on-primary'
-                              : 'bg-[#1b1b1b] border-outline-variant text-transparent'
-                          }`}
-                          title={deleteSelectedLabel}
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
+                        <div />
                         <div className="flex items-center gap-2">
                           <button
                             onClick={(e) => {
@@ -1235,6 +1222,20 @@ export default function App() {
                             className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-red-500/20 transition-colors"
                           >
                             {deleteItemLabel}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleHistorySelection(scan.id);
+                            }}
+                            className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                              selectedHistoryIds.includes(scan.id)
+                                ? 'bg-primary border-primary text-on-primary'
+                                : 'bg-[#1b1b1b] border-outline-variant text-transparent'
+                            }`}
+                            title={deleteSelectedLabel}
+                          >
+                            <Check className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
