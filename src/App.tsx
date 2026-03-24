@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play, FileUp, Cpu, CheckCircle2, Circle, Hourglass, Database } from 'lucide-react';
+import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play, FileUp, Cpu, CheckCircle2, Circle, Hourglass, Database, Search, CalendarDays, Clock3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScanResult, MOCK_SCANS, LEATHER_CATEGORIES, AVG_PRECISION } from './types';
 import { classifyLeather } from './services/gemini';
@@ -96,6 +96,22 @@ function formatToMinute(timestamp: number) {
   return `${yyyy}/${mm}/${dd} ${hh}:${mi}`;
 }
 
+function formatHistoryDate(timestamp: number) {
+  return new Date(timestamp).toLocaleDateString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function formatHistoryTime(timestamp: number) {
+  return new Date(timestamp).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
 export default function App() {
   const SCAN_FRAME = { xPct: 0.22, yPct: 0.22, widthPct: 0.56, heightPct: 0.42 };
   const SCAN_CONTAINER_ASPECT = 4 / 5;
@@ -114,6 +130,7 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>('dark');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
+  const [historySearch, setHistorySearch] = useState('');
   const [previewImage, setPreviewImage] = useState<{ src: string; title: string } | null>(null);
   const scanVideoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -210,6 +227,10 @@ export default function App() {
     navHistory: '历史',
     navProfile: '我的',
     confidence: '置信度',
+    archive: 'ARCHIVE',
+    searchHistory: '搜索材质或日期...',
+    totalScans: 'TOTAL SCANS',
+    avgAccuracy: 'ACCURACY',
   } : {
     appName: 'LeatherMind',
     allowCamera: 'Please allow camera access to scan leather.',
@@ -237,6 +258,10 @@ export default function App() {
     navHistory: 'History',
     navProfile: 'Profile',
     confidence: 'confidence',
+    archive: 'ARCHIVE',
+    searchHistory: 'Search materials or dates...',
+    totalScans: 'TOTAL SCANS',
+    avgAccuracy: 'ACCURACY',
   };
   const deviceLabel = language === 'zh' ? '设备' : 'Device';
   const timeLabel = language === 'zh' ? '时间' : 'Time';
@@ -331,6 +356,12 @@ export default function App() {
   };
   const bestMatch = lastScan?.matches?.[0] ?? null;
   const similarMatches = lastScan?.matches?.slice(0, 3) ?? [];
+  const filteredHistory = history.filter(matchesHistorySearch);
+  const filteredHistoryIds = filteredHistory.map((item) => item.id);
+  const allVisibleSelected = filteredHistoryIds.length > 0 && filteredHistoryIds.every((id) => selectedHistoryIds.includes(id));
+  const avgAccuracy = history.length
+    ? history.reduce((sum, item) => sum + (item.matches?.[0]?.confidence || 0), 0) / history.length
+    : 0;
   const stage1Done = analysisProgress >= 36;
   const stage2Done = analysisProgress >= 72;
   const stage3Done = analysisProgress >= 96;
@@ -368,8 +399,26 @@ export default function App() {
     setSelectedHistoryIds((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
   };
 
+  function matchesHistorySearch(scan: ScanResult) {
+    const q = historySearch.trim().toLowerCase();
+    if (!q) return true;
+    const label = (scan.matches?.[0]?.label || '').toLowerCase();
+    const note = (scan.note || '').toLowerCase();
+    const date = formatHistoryDate(scan.timestamp).toLowerCase();
+    const time = formatHistoryTime(scan.timestamp).toLowerCase();
+    const device = (scan.device || '').toLowerCase();
+    return label.includes(q) || note.includes(q) || date.includes(q) || time.includes(q) || device.includes(q);
+  }
+
   const toggleSelectAllHistory = () => {
-    setSelectedHistoryIds((prev) => (prev.length === history.length ? [] : history.map((item) => item.id)));
+    const visibleIds = history.filter(matchesHistorySearch).map((item) => item.id);
+    setSelectedHistoryIds((prev) => {
+      const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => prev.includes(id));
+      if (allVisibleSelected) {
+        return prev.filter((id) => !visibleIds.includes(id));
+      }
+      return Array.from(new Set([...prev, ...visibleIds]));
+    });
   };
 
   const deleteSelectedHistory = () => {
@@ -1075,13 +1124,35 @@ export default function App() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <button onClick={() => setCurrentView('home')} className="p-2 hover:bg-surface-container-high rounded-lg">
-                    <ChevronRight className="w-6 h-6 rotate-180" />
-                  </button>
-                  <h2 className="headline-sm mt-4">{text.scanHistory}</h2>
-                </div>
+              <div>
+                <p className="label-sm text-primary/80">{text.archive}</p>
+                <h2 className="font-headline font-extrabold text-5xl tracking-tight mt-2">{text.scanHistory}</h2>
+              </div>
+
+              <div className="relative">
+                <Search className="w-5 h-5 text-outline absolute left-4 top-1/2 -translate-y-1/2" />
+                <input
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder={text.searchHistory}
+                  className="w-full pl-12 pr-4 py-4 rounded-2xl bg-black/35 border border-outline-variant/25 body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={toggleSelectAllHistory}
+                  className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors"
+                >
+                  {allVisibleSelected ? clearSelectLabel : selectAllLabel}
+                </button>
+                <button
+                  onClick={deleteSelectedHistory}
+                  disabled={!selectedHistoryIds.length}
+                  className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleteSelectedLabel} ({selectedHistoryIds.length})
+                </button>
                 <button
                   onClick={() => {
                     if (!history.length) return;
@@ -1096,29 +1167,17 @@ export default function App() {
                   {text.clearHistory}
                 </button>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={toggleSelectAllHistory}
-                  className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors"
-                >
-                  {selectedHistoryIds.length === history.length && history.length > 0 ? clearSelectLabel : selectAllLabel}
-                </button>
-                <button
-                  onClick={deleteSelectedHistory}
-                  disabled={!selectedHistoryIds.length}
-                  className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {deleteSelectedLabel} ({selectedHistoryIds.length})
-                </button>
-              </div>
-              
+
               <div className="space-y-4">
-                {history.map((scan) => (
+                {filteredHistory.map((scan) => (
                   <div 
                     key={scan.id}
                     onClick={() => { setLastScan(scan); setCurrentView('result'); }}
-                    className="flex items-center gap-4 p-4 bg-surface-container rounded-2xl hover:bg-surface-container-high transition-colors cursor-pointer"
+                    className="relative flex items-center gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high transition-colors cursor-pointer"
                   >
+                    <span className="absolute top-3 right-3 label-sm px-3 py-1 rounded-lg bg-tertiary/90 text-on-tertiary">
+                      {scan.matches[0].confidence}%
+                    </span>
                     <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
                       {getPreviewUrl(scan) ? (
                         <img src={getPreviewUrl(scan)} alt={scan.matches[0].label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -1127,10 +1186,17 @@ export default function App() {
                       )}
                     </div>
                     <div className="flex-grow">
-                      <p className="label-sm text-outline mb-1">
-                        {timeLabel}: {formatToMinute(scan.timestamp)}
-                      </p>
-                      <h4 className="font-headline font-bold text-base">{scan.matches[0].label}</h4>
+                      <h4 className="font-headline font-bold text-lg leading-tight pr-20">{scan.matches[0].label}</h4>
+                      <div className="mt-2 space-y-1">
+                        <p className="body-md text-outline flex items-center gap-2">
+                          <CalendarDays className="w-4 h-4" />
+                          ({formatHistoryDate(scan.timestamp)})
+                        </p>
+                        <p className="body-md text-outline flex items-center gap-2">
+                          <Clock3 className="w-4 h-4" />
+                          {formatHistoryTime(scan.timestamp)}
+                        </p>
+                      </div>
                       <p className="body-md text-outline mb-1">
                         {deviceLabel}: {scan.device || 'Unknown'}
                       </p>
@@ -1141,7 +1207,7 @@ export default function App() {
                       )}
                       <div className="flex items-center gap-2 mt-1">
                         <Verified className="w-3.5 h-3.5 text-tertiary fill-current" />
-                        <span className="body-md text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
+                        <span className="body-md text-on-surface-variant">{scan.matches[0].confidence}%</span>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
                         <input
@@ -1152,7 +1218,7 @@ export default function App() {
                             toggleHistorySelection(scan.id);
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          className="w-4 h-4 accent-primary"
+                          className="w-4 h-4 accent-primary bg-surface-container-high border border-outline-variant rounded"
                           title={deleteSelectedLabel}
                         />
                         <button
@@ -1175,8 +1241,20 @@ export default function App() {
                         </button>
                       </div>
                     </div>
+                    <ChevronRight className="w-5 h-5 text-outline" />
                   </div>
                 ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="rounded-2xl bg-black/35 border border-outline-variant/20 p-5">
+                  <p className="label-sm text-on-surface-variant">{text.totalScans}</p>
+                  <p className="font-headline font-extrabold text-5xl text-primary mt-2">{history.length}</p>
+                </div>
+                <div className="rounded-2xl bg-black/35 border border-outline-variant/20 p-5">
+                  <p className="label-sm text-on-surface-variant">{text.avgAccuracy}</p>
+                  <p className="font-headline font-extrabold text-5xl text-tertiary mt-2">{Math.round(avgAccuracy)}%</p>
+                </div>
               </div>
             </motion.div>
           )}
