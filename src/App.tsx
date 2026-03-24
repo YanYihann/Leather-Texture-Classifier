@@ -4,15 +4,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Home, Camera, History, User, Settings, ChevronRight, Verified, Upload, X, Loader2 } from 'lucide-react';
+import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScanResult, MOCK_SCANS, LEATHER_CATEGORIES, AVG_PRECISION } from './types';
 import { classifyLeather } from './services/gemini';
 
 type View = 'home' | 'scan' | 'history' | 'profile' | 'result';
+type Language = 'zh' | 'en';
+type Theme = 'dark' | 'light';
 const HISTORY_STORAGE_KEY = 'leather_history';
 const MAX_HISTORY_ITEMS = 30;
 const MAX_PERSISTED_ITEMS = 30;
+const UI_LANG_KEY = 'ui_language';
+const UI_THEME_KEY = 'ui_theme';
 
 function getPreviewUrl(scan: ScanResult) {
   const fallback = (scan.matches?.[0] as any)?.referenceUrl as string | undefined;
@@ -75,6 +79,8 @@ export default function App() {
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [language, setLanguage] = useState<Language>('zh');
+  const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
     const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
@@ -99,6 +105,83 @@ export default function App() {
     persistHistorySafely(history);
   }, [history]);
 
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem(UI_LANG_KEY);
+    const savedTheme = localStorage.getItem(UI_THEME_KEY);
+    if (savedLanguage === 'zh' || savedLanguage === 'en') {
+      setLanguage(savedLanguage);
+    }
+    if (savedTheme === 'dark' || savedTheme === 'light') {
+      setTheme(savedTheme);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(UI_LANG_KEY, language);
+    document.title = language === 'zh' ? '革识' : 'LeatherMind';
+  }, [language]);
+
+  useEffect(() => {
+    localStorage.setItem(UI_THEME_KEY, theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const text = language === 'zh' ? {
+    appName: '革识',
+    allowCamera: '请允许摄像头权限后再扫描。',
+    modelReady: '模型已就绪：AI 材质分析在线',
+    heroTitle: '皮革纹理识别',
+    heroDesc: `使用 AI 在 ${LEATHER_CATEGORIES} 个类别中识别皮革材质`,
+    scanLeather: '扫描皮革',
+    uploadGallery: '从相册上传',
+    database: '数据库',
+    categoriesDesc: '已收录皮革类别',
+    precision: '精度',
+    precisionDesc: '平均识别置信度',
+    recentScans: '最近识别',
+    recentScansDesc: '你的历史识别记录',
+    viewAll: '查看全部',
+    analysisResult: '分析结果',
+    analyzing: '正在分析纹理...',
+    topMatches: 'Top 匹配',
+    done: '完成',
+    scanHistory: '识别历史',
+    clearHistory: '清空历史',
+    clearConfirm: '确认清空所有历史记录吗？',
+    navHome: '首页',
+    navScan: '扫描',
+    navHistory: '历史',
+    navProfile: '我的',
+    confidence: '置信度',
+  } : {
+    appName: 'LeatherMind',
+    allowCamera: 'Please allow camera access to scan leather.',
+    modelReady: 'Model Ready: AI-driven analysis online.',
+    heroTitle: 'Leather Texture Classifier',
+    heroDesc: `Identify leather materials across ${LEATHER_CATEGORIES} categories with AI precision.`,
+    scanLeather: 'Scan Leather',
+    uploadGallery: 'Upload from Gallery',
+    database: 'Database',
+    categoriesDesc: 'Leather categories cataloged.',
+    precision: 'Precision',
+    precisionDesc: 'Average AI confidence score.',
+    recentScans: 'Recent Scans',
+    recentScansDesc: 'Your previous material classifications',
+    viewAll: 'View All',
+    analysisResult: 'Analysis Result',
+    analyzing: 'Analyzing Texture...',
+    topMatches: 'Top Matches',
+    done: 'Done',
+    scanHistory: 'Scan History',
+    clearHistory: 'Clear History',
+    clearConfirm: 'Clear all saved scan history?',
+    navHome: 'Home',
+    navScan: 'Scan',
+    navHistory: 'History',
+    navProfile: 'Profile',
+    confidence: 'confidence',
+  };
+
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -106,7 +189,7 @@ export default function App() {
       setCurrentView('scan');
     } catch (err) {
       console.error("Camera error:", err);
-      alert("Please allow camera access to scan leather.");
+      alert(text.allowCamera);
     }
   };
 
@@ -197,11 +280,22 @@ export default function App() {
               referrerPolicy="no-referrer"
             />
           </div>
-          <h1 className="font-headline font-extrabold text-primary tracking-tighter text-xl">Digital Artisan</h1>
+          <h1 className="font-headline font-extrabold text-primary tracking-tighter text-xl">{text.appName}</h1>
         </div>
-        <button className="p-2 hover:bg-surface-container-high rounded-lg transition-colors">
-          <Settings className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setLanguage((prev) => (prev === 'zh' ? 'en' : 'zh'))}
+            className="px-3 py-1.5 rounded-lg bg-surface-container-high text-xs font-label uppercase tracking-wider hover:bg-surface-variant transition-colors"
+          >
+            {language === 'zh' ? 'EN' : '中'}
+          </button>
+          <button
+            onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+            className="px-3 py-1.5 rounded-lg bg-surface-container-high text-xs font-label uppercase tracking-wider hover:bg-surface-variant transition-colors"
+          >
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -227,10 +321,10 @@ export default function App() {
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-surface-container-lowest/60 backdrop-blur-md border border-outline-variant/10">
                     <span className="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#e9c349]" />
-                    <span className="font-label text-[10px] font-medium uppercase tracking-widest">Model Ready: AI-driven analysis online.</span>
+                    <span className="font-label text-[10px] font-medium uppercase tracking-widest">{text.modelReady}</span>
                   </div>
-                  <h2 className="font-headline font-extrabold text-4xl tracking-tight leading-tight mb-2">Leather Texture Classifier</h2>
-                  <p className="font-body text-on-surface-variant text-sm max-w-sm leading-relaxed">Identify leather materials across {LEATHER_CATEGORIES} categories with AI precision.</p>
+                  <h2 className="font-headline font-extrabold text-4xl tracking-tight leading-tight mb-2">{text.heroTitle}</h2>
+                  <p className="font-body text-on-surface-variant text-sm max-w-sm leading-relaxed">{text.heroDesc}</p>
                 </div>
               </section>
 
@@ -241,11 +335,11 @@ export default function App() {
                   className="w-full py-4 rounded-lg bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-bold text-lg shadow-xl shadow-black/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                 >
                   <Camera className="w-5 h-5 fill-current" />
-                  Scan Leather
+                  {text.scanLeather}
                 </button>
                 <label className="w-full py-4 rounded-lg bg-surface-container-high border border-outline-variant/20 text-on-surface font-headline font-bold text-lg flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors active:scale-[0.98] cursor-pointer">
                   <Upload className="w-5 h-5" />
-                  Upload from Gallery
+                  {text.uploadGallery}
                   <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
                 </label>
               </div>
@@ -253,14 +347,14 @@ export default function App() {
               {/* Stats */}
               <section className="grid grid-cols-2 gap-4">
                 <div className="bg-surface-container-low p-5 rounded-xl border-l-4 border-primary">
-                  <p className="font-label text-[10px] uppercase tracking-widest text-outline mb-1">Database</p>
+                  <p className="font-label text-[10px] uppercase tracking-widest text-outline mb-1">{text.database}</p>
                   <p className="font-headline font-bold text-2xl text-primary">{LEATHER_CATEGORIES}</p>
-                  <p className="font-body text-[11px] text-on-surface-variant leading-tight">Leather categories cataloged.</p>
+                  <p className="font-body text-[11px] text-on-surface-variant leading-tight">{text.categoriesDesc}</p>
                 </div>
                 <div className="bg-surface-container-low p-5 rounded-xl border-l-4 border-tertiary">
-                  <p className="font-label text-[10px] uppercase tracking-widest text-outline mb-1">Precision</p>
+                  <p className="font-label text-[10px] uppercase tracking-widest text-outline mb-1">{text.precision}</p>
                   <p className="font-headline font-bold text-2xl text-tertiary">{AVG_PRECISION}%</p>
-                  <p className="font-body text-[11px] text-on-surface-variant leading-tight">Average AI confidence score.</p>
+                  <p className="font-body text-[11px] text-on-surface-variant leading-tight">{text.precisionDesc}</p>
                 </div>
               </section>
 
@@ -268,14 +362,14 @@ export default function App() {
               <section>
                 <div className="flex justify-between items-end mb-6">
                   <div>
-                    <h3 className="font-headline font-bold text-xl tracking-tight">Recent Scans</h3>
-                    <p className="font-body text-xs text-outline">Your previous material classifications</p>
+                    <h3 className="font-headline font-bold text-xl tracking-tight">{text.recentScans}</h3>
+                    <p className="font-body text-xs text-outline">{text.recentScansDesc}</p>
                   </div>
                   <button 
                     onClick={() => setCurrentView('history')}
                     className="text-primary font-label text-xs uppercase font-semibold tracking-wider hover:underline"
                   >
-                    View All
+                    {text.viewAll}
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -301,7 +395,7 @@ export default function App() {
                         <h4 className="font-headline font-bold text-sm">{scan.matches[0].label}</h4>
                         <div className="flex items-center gap-2 mt-1">
                           <Verified className="w-3.5 h-3.5 text-tertiary fill-current" />
-                          <span className="font-body text-xs text-on-surface-variant">{scan.matches[0].confidence}% confidence</span>
+                          <span className="font-body text-xs text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
                         </div>
                       </div>
                       <ChevronRight className="w-5 h-5 text-outline group-hover:text-primary transition-colors" />
@@ -371,7 +465,7 @@ export default function App() {
                 >
                   <X className="w-6 h-6" />
                 </button>
-                <h2 className="font-headline font-bold text-xl">Analysis Result</h2>
+                <h2 className="font-headline font-bold text-xl">{text.analysisResult}</h2>
                 <div className="w-10" />
               </div>
 
@@ -379,7 +473,7 @@ export default function App() {
                 {isScanning && (
                   <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
                     <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                    <p className="font-headline font-bold text-primary">Analyzing Texture...</p>
+                    <p className="font-headline font-bold text-primary">{text.analyzing}</p>
                   </div>
                 )}
                 {lastScan && (
@@ -395,7 +489,7 @@ export default function App() {
               {lastScan && !isScanning && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <p className="font-label text-[10px] uppercase tracking-widest text-outline">Top Matches</p>
+                    <p className="font-label text-[10px] uppercase tracking-widest text-outline">{text.topMatches}</p>
                     <div className="space-y-4">
                       {lastScan.matches.map((match, idx) => (
                         <div key={idx} className="bg-surface-container-low p-4 rounded-xl space-y-3">
@@ -437,7 +531,7 @@ export default function App() {
                     onClick={() => setCurrentView('home')}
                     className="w-full py-4 rounded-lg bg-surface-container-high font-headline font-bold text-on-surface hover:bg-surface-variant transition-colors"
                   >
-                    Done
+                    {text.done}
                   </button>
                 </div>
               )}
@@ -457,18 +551,18 @@ export default function App() {
                   <button onClick={() => setCurrentView('home')} className="p-2 hover:bg-surface-container-high rounded-lg">
                     <ChevronRight className="w-6 h-6 rotate-180" />
                   </button>
-                  <h2 className="font-headline font-bold text-2xl">Scan History</h2>
+                  <h2 className="font-headline font-bold text-2xl">{text.scanHistory}</h2>
                 </div>
                 <button
                   onClick={() => {
                     if (!history.length) return;
-                    if (!window.confirm('Clear all saved scan history?')) return;
+                    if (!window.confirm(text.clearConfirm)) return;
                     setHistory([]);
                     localStorage.removeItem(HISTORY_STORAGE_KEY);
                   }}
                   className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors font-label uppercase tracking-wider text-on-surface-variant"
                 >
-                  Clear History
+                  {text.clearHistory}
                 </button>
               </div>
               
@@ -493,7 +587,7 @@ export default function App() {
                       <h4 className="font-headline font-bold text-base">{scan.matches[0].label}</h4>
                       <div className="flex items-center gap-2 mt-1">
                         <Verified className="w-3.5 h-3.5 text-tertiary fill-current" />
-                        <span className="font-body text-xs text-on-surface-variant">{scan.matches[0].confidence}% confidence</span>
+                        <span className="font-body text-xs text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
                       </div>
                     </div>
                   </div>
@@ -511,25 +605,25 @@ export default function App() {
             active={currentView === 'home'} 
             onClick={() => setCurrentView('home')} 
             icon={<Home className={currentView === 'home' ? 'fill-current' : ''} />} 
-            label="Home" 
+            label={text.navHome} 
           />
           <NavItem 
             active={currentView === 'scan'} 
             onClick={startCamera} 
             icon={<Camera />} 
-            label="Scan" 
+            label={text.navScan} 
           />
           <NavItem 
             active={currentView === 'history'} 
             onClick={() => setCurrentView('history')} 
             icon={<History />} 
-            label="History" 
+            label={text.navHistory} 
           />
           <NavItem 
             active={currentView === 'profile'} 
             onClick={() => setCurrentView('profile')} 
             icon={<User />} 
-            label="Profile" 
+            label={text.navProfile} 
           />
         </div>
       </nav>

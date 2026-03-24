@@ -41,6 +41,38 @@
 }
 
 @layer base {
+  :root[data-theme="light"] {
+    --color-primary: #8c5a2b;
+    --color-on-primary: #fff8f0;
+    --color-primary-container: #d8b186;
+    --color-on-primary-container: #3f2506;
+
+    --color-secondary: #85776f;
+    --color-on-secondary: #ffffff;
+    --color-secondary-container: #d7c8bf;
+
+    --color-tertiary: #9a7a10;
+    --color-on-tertiary: #fff9e8;
+    --color-tertiary-container: #f0d371;
+
+    --color-background: #f8f4ef;
+    --color-on-background: #2b241f;
+
+    --color-surface: #f8f4ef;
+    --color-on-surface: #2b241f;
+    --color-surface-variant: #e8ddd2;
+    --color-on-surface-variant: #66584c;
+
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #f3ece4;
+    --color-surface-container: #ede3d8;
+    --color-surface-container-high: #e5d7c8;
+    --color-surface-container-highest: #dccab7;
+
+    --color-outline: #8d7f73;
+    --color-outline-variant: #c4b5a6;
+  }
+
   body {
     @apply bg-background text-on-background font-body antialiased;
   }
