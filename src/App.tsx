@@ -183,14 +183,28 @@ export default function App() {
   };
 
   const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      setCameraStream(stream);
-      setCurrentView('scan');
-    } catch (err) {
-      console.error("Camera error:", err);
+    if (!navigator.mediaDevices?.getUserMedia) {
       alert(text.allowCamera);
+      return;
     }
+
+    const attempts: MediaStreamConstraints[] = [
+      { video: { facingMode: { ideal: 'environment' } } },
+      { video: true },
+    ];
+
+    for (const constraints of attempts) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        setCameraStream(stream);
+        setCurrentView('scan');
+        return;
+      } catch (err) {
+        console.error("Camera attempt failed:", constraints, err);
+      }
+    }
+
+    alert(text.allowCamera);
   };
 
   const stopCamera = () => {
