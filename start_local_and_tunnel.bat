@@ -42,7 +42,7 @@ echo [INFO] Waiting for local server...
 timeout /t 6 /nobreak >nul
 
 echo [INFO] Starting Cloudflare Tunnel...
-start "LeatherMind Tunnel" cmd /k "cd /d ""%PROJECT_DIR%"" && ""%CLOUDFLARED_CMD%"" tunnel --url http://localhost:3000"
+start "LeatherMind Tunnel" powershell -NoExit -ExecutionPolicy Bypass -File "%PROJECT_DIR%run_tunnel_with_clipboard.ps1" -CloudflaredPath "%CLOUDFLARED_CMD%"
 
 echo [INFO] Opening local page in browser...
 timeout /t 2 /nobreak >nul
@@ -50,8 +50,8 @@ start "" http://localhost:3000
 
 echo.
 echo [DONE] Local page is opening.
-echo [DONE] In the "LeatherMind Tunnel" window, copy the https://*.trycloudflare.com URL to your phone.
+echo [DONE] The Tunnel URL is automatically copied to your clipboard when ready.
+echo [DONE] Paste it on your phone browser to open the app.
 echo [TIP] Run stop_local_and_tunnel.bat to stop services quickly.
 echo.
 pause
-

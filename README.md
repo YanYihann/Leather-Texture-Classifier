@@ -27,6 +27,7 @@ Use these scripts in the project root:
   - Starts local dev server
   - Starts Cloudflare Tunnel
   - Opens `http://localhost:3000` in your browser
+  - Auto-copies the generated `https://*.trycloudflare.com` URL to clipboard
 - `stop_local_and_tunnel.bat`
   - Stops the local server and tunnel quickly
 
