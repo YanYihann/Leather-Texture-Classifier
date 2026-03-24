@@ -25,9 +25,9 @@ Use these scripts in the project root:
 
 - `start_local_and_tunnel.bat`
   - Starts local dev server
-  - Starts Cloudflare Tunnel
+  - Starts Cloudflare named tunnel `leathermind`
   - Opens `http://localhost:3000` in your browser
-  - Auto-copies the generated `https://*.trycloudflare.com` URL to clipboard
+  - Opens public URL `https://app.yanyihan.top`
 - `stop_local_and_tunnel.bat`
   - Stops the local server and tunnel quickly
 

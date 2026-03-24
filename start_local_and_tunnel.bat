@@ -3,6 +3,8 @@ setlocal enabledelayedexpansion
 
 set "PROJECT_DIR=%~dp0"
 cd /d "%PROJECT_DIR%"
+set "TUNNEL_NAME=leathermind"
+set "PUBLIC_URL=https://app.yanyihan.top"
 
 set "PYTHON_EXE=D:\anaconda\envs\digital-artisan\python.exe"
 if not exist "%PYTHON_EXE%" (
@@ -42,16 +44,17 @@ echo [INFO] Waiting for local server...
 timeout /t 6 /nobreak >nul
 
 echo [INFO] Starting Cloudflare Tunnel...
-start "LeatherMind Tunnel" powershell -NoExit -ExecutionPolicy Bypass -File "%PROJECT_DIR%run_tunnel_with_clipboard.ps1" -CloudflaredPath "%CLOUDFLARED_CMD%"
+start "LeatherMind Tunnel" cmd /k "cd /d ""%PROJECT_DIR%"" && ""%CLOUDFLARED_CMD%"" tunnel run %TUNNEL_NAME%"
 
-echo [INFO] Opening local page in browser...
+echo [INFO] Opening local and public pages in browser...
 timeout /t 2 /nobreak >nul
 start "" http://localhost:3000
+start "" %PUBLIC_URL%
 
 echo.
 echo [DONE] Local page is opening.
-echo [DONE] The Tunnel URL is automatically copied to your clipboard when ready.
-echo [DONE] Paste it on your phone browser to open the app.
+echo [DONE] Public URL: %PUBLIC_URL%
+echo [DONE] You can open the same URL on your phone.
 echo [TIP] Run stop_local_and_tunnel.bat to stop services quickly.
 echo.
 pause
