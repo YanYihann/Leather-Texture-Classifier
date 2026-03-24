@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2 } from 'lucide-react';
+import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScanResult, MOCK_SCANS, LEATHER_CATEGORIES, AVG_PRECISION } from './types';
 import { classifyLeather } from './services/gemini';
@@ -102,6 +102,8 @@ export default function App() {
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [scanDraftImage, setScanDraftImage] = useState<string | null>(null);
+  const [isFlashOn, setIsFlashOn] = useState(false);
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>('dark');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
@@ -288,6 +290,10 @@ export default function App() {
     });
   };
 
+  const openScanWorkspace = () => {
+    setCurrentView('scan');
+  };
+
   const startCamera = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       alert(text.allowCamera);
@@ -304,6 +310,8 @@ export default function App() {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         setCameraStream(stream);
         setCurrentView('scan');
+        setScanDraftImage(null);
+        setIsFlashOn(false);
         return;
       } catch (err) {
         console.error("Camera attempt failed:", constraints, err);
@@ -317,10 +325,22 @@ export default function App() {
     if (cameraStream) {
       cameraStream.getTracks().forEach(track => track.stop());
       setCameraStream(null);
+      setIsFlashOn(false);
     }
   };
 
-  const captureImage = async () => {
+  const toggleFlash = async () => {
+    if (!cameraStream) return;
+    const track = cameraStream.getVideoTracks()[0];
+    if (!track) return;
+    const caps = (track.getCapabilities?.() || {}) as any;
+    if (!caps.torch) return;
+    const next = !isFlashOn;
+    await track.applyConstraints({ advanced: [{ torch: next } as any] });
+    setIsFlashOn(next);
+  };
+
+  const captureImage = () => {
     const video = document.querySelector('video');
     if (!video) return;
 
@@ -332,11 +352,13 @@ export default function App() {
 
     ctx.drawImage(video, 0, 0);
     const base64 = canvas.toDataURL('image/jpeg');
-    
     stopCamera();
+    setScanDraftImage(base64);
+  };
+
+  const analyzeImage = async (base64: string) => {
     setIsScanning(true);
     setCurrentView('result');
-
     try {
       const matches = await classifyLeather(base64);
       const historyImage = await createThumbnailDataUrl(base64);
@@ -346,6 +368,7 @@ export default function App() {
         imageUrl: historyImage,
         matches,
         device: detectDeviceLabel(),
+        note: '',
       };
       setLastScan(newScan);
       setHistory(prev => [newScan, ...prev].slice(0, MAX_HISTORY_ITEMS));
@@ -361,6 +384,29 @@ export default function App() {
     }
   };
 
+  const startAnalysisFromScan = async () => {
+    if (!scanDraftImage) return;
+    await analyzeImage(scanDraftImage);
+  };
+
+  const retakePhoto = async () => {
+    setScanDraftImage(null);
+    await startCamera();
+  };
+
+  const handleScanFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    stopCamera();
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setScanDraftImage(base64);
+      setCurrentView('scan');
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -368,31 +414,7 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = async (event) => {
       const base64 = event.target?.result as string;
-      setIsScanning(true);
-      setCurrentView('result');
-      
-      try {
-        const matches = await classifyLeather(base64);
-        const historyImage = await createThumbnailDataUrl(base64);
-        const newScan: ScanResult = {
-          id: Math.random().toString(36).substr(2, 9),
-          timestamp: Date.now(),
-          imageUrl: historyImage,
-          matches,
-          device: detectDeviceLabel(),
-        };
-        setLastScan(newScan);
-        setHistory(prev => [newScan, ...prev].slice(0, MAX_HISTORY_ITEMS));
-        void fetch(historyEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scan: newScan }),
-        });
-      } catch (err) {
-        console.error("Classification error:", err);
-      } finally {
-        setIsScanning(false);
-      }
+      await analyzeImage(base64);
     };
     reader.readAsDataURL(file);
   };
@@ -463,7 +485,7 @@ export default function App() {
               {/* Actions */}
               <div className="flex flex-col gap-3">
                 <button 
-                  onClick={startCamera}
+                  onClick={openScanWorkspace}
                   className="w-full py-4 rounded-lg bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-bold text-lg shadow-xl shadow-black/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                 >
                   <Camera className="w-5 h-5 fill-current" />
@@ -552,39 +574,106 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black flex flex-col overflow-hidden"
+              className="space-y-5"
             >
-              <div className="relative flex-1 min-h-0">
-                <video 
-                  autoPlay 
-                  playsInline 
-                  ref={(el) => { if (el && cameraStream) el.srcObject = cameraStream; }}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 border-[40px] border-black/40 pointer-events-none">
-                  <div className="w-full h-full border-2 border-primary/50 relative">
-                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary" />
-                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary" />
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary" />
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary" />
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => { stopCamera(); setCurrentView('home'); }}
+                  className="p-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors"
+                >
+                  <ChevronRight className="w-6 h-6 rotate-180" />
+                </button>
+                <h2 className="font-headline font-extrabold text-2xl">{text.appName}</h2>
+                <div className="w-10" />
+              </div>
+
+              <div className="relative rounded-2xl overflow-hidden bg-surface-container-low border border-outline-variant/20">
+                <div className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full bg-black/45 text-[10px] tracking-[0.2em] uppercase">{cameraStream ? 'Live Scanner' : 'Scan Workspace'}</div>
+                {cameraStream && (
+                  <button
+                    onClick={toggleFlash}
+                    className={`absolute top-4 right-4 z-20 w-11 h-11 rounded-full flex items-center justify-center transition-colors ${isFlashOn ? 'bg-tertiary text-on-tertiary' : 'bg-black/45 text-white'}`}
+                  >
+                    <Zap className="w-5 h-5" />
+                  </button>
+                )}
+
+                <div className="aspect-[4/5] relative">
+                  {cameraStream ? (
+                    <video 
+                      autoPlay 
+                      playsInline 
+                      ref={(el) => { if (el && cameraStream) el.srcObject = cameraStream; }}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={scanDraftImage || 'https://images.unsplash.com/photo-1616627452934-67e61d9ee3b7?q=80&w=1200&auto=format&fit=crop'}
+                      alt="Scan Preview"
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute inset-8 border border-primary/35 rounded-xl" />
+                    <div className="absolute top-6 left-6 w-10 h-10 border-t-4 border-l-4 border-primary/80 rounded-tl-md" />
+                    <div className="absolute top-6 right-6 w-10 h-10 border-t-4 border-r-4 border-primary/80 rounded-tr-md" />
+                    <div className="absolute bottom-6 left-6 w-10 h-10 border-b-4 border-l-4 border-primary/80 rounded-bl-md" />
+                    <div className="absolute bottom-6 right-6 w-10 h-10 border-b-4 border-r-4 border-primary/80 rounded-br-md" />
+                  </div>
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-black/45 backdrop-blur-sm text-center">
+                    <p className="text-xs uppercase tracking-widest text-primary">Optimal Distance</p>
+                    <p className="text-sm text-on-surface-variant">8-12 cm from surface</p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => { stopCamera(); setCurrentView('home'); }}
-                  className="absolute top-10 left-6 p-2 bg-black/50 rounded-full text-white"
-                >
-                  <X className="w-6 h-6" />
-                </button>
               </div>
-              <div
-                className="flex-none bg-background/95 backdrop-blur-sm flex items-center justify-center py-4"
-                style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
-              >
+
+              <div className="grid grid-cols-2 gap-3">
                 <button 
-                  onClick={captureImage}
-                  className="w-16 h-16 rounded-full border-4 border-primary p-1"
+                  onClick={cameraStream ? captureImage : startCamera}
+                  className="py-4 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-headline font-bold text-base flex items-center justify-center gap-2"
                 >
-                  <div className="w-full h-full rounded-full bg-primary" />
+                  <Camera className="w-5 h-5" />
+                  {cameraStream ? 'Capture' : 'Take Photo'}
+                </button>
+                <label className="py-4 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-headline font-bold text-base flex items-center justify-center gap-2 cursor-pointer">
+                  <ImageIcon className="w-5 h-5" />
+                  Gallery
+                  <input type="file" className="hidden" accept="image/*" onChange={handleScanFileUpload} />
+                </label>
+              </div>
+
+              <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0">
+                  <img
+                    src="https://images.unsplash.com/photo-1527613426441-4da17471b66d?q=80&w=200&auto=format&fit=crop"
+                    alt="Quality Tip"
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div>
+                  <p className="font-headline font-bold text-base">Capture Quality Tip</p>
+                  <p className="text-sm text-on-surface-variant">Use a clear close-up texture image. Avoid heavy glare and deep shadow.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={retakePhoto}
+                  disabled={!scanDraftImage}
+                  className="py-4 rounded-xl bg-surface-container-high text-on-surface font-headline font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  Retake
+                </button>
+                <button
+                  onClick={startAnalysisFromScan}
+                  disabled={!scanDraftImage || isScanning}
+                  className="py-4 rounded-xl bg-primary text-on-primary font-headline font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Play className="w-5 h-5" />
+                  Start Analysis
                 </button>
               </div>
             </motion.div>
@@ -805,7 +894,7 @@ export default function App() {
           />
           <NavItem 
             active={currentView === 'scan'} 
-            onClick={startCamera} 
+            onClick={openScanWorkspace} 
             icon={<Camera />} 
             label={text.navScan} 
           />
