@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { spawn } from "child_process";
 import fs from "fs";
+import fsp from "fs/promises";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,8 +15,59 @@ async function startServer() {
   const pythonCommand = process.env.PYTHON_EXECUTABLE || (process.platform === "win32" ? "python" : "python3");
   const datasetDir = process.env.DATASET_DIR || path.join(__dirname, "dataset_train");
   const modelPath = process.env.MODEL_PATH || path.join(__dirname, "best_leather_model_val.pth");
+  const historyFilePath = process.env.HISTORY_FILE || path.join(__dirname, "shared_history.json");
+  const historyLimit = Number(process.env.HISTORY_LIMIT || 1000);
 
   app.use(express.json({ limit: '50mb' }));
+
+  async function readSharedHistory() {
+    try {
+      const raw = await fsp.readFile(historyFilePath, "utf-8");
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async function writeSharedHistory(history: any[]) {
+    await fsp.mkdir(path.dirname(historyFilePath), { recursive: true });
+    await fsp.writeFile(historyFilePath, JSON.stringify(history, null, 2), "utf-8");
+  }
+
+  app.get("/api/history", async (_req, res) => {
+    try {
+      const history = await readSharedHistory();
+      return res.json({ history });
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to read shared history", details: err?.message || String(err) });
+    }
+  });
+
+  app.post("/api/history", async (req, res) => {
+    try {
+      const { scan } = req.body || {};
+      if (!scan || typeof scan !== "object") {
+        return res.status(400).json({ error: "Invalid payload. Expected { scan }" });
+      }
+
+      const history = await readSharedHistory();
+      const next = [scan, ...history].slice(0, historyLimit);
+      await writeSharedHistory(next);
+      return res.json({ ok: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to save shared history", details: err?.message || String(err) });
+    }
+  });
+
+  app.delete("/api/history", async (_req, res) => {
+    try {
+      await writeSharedHistory([]);
+      return res.json({ ok: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to clear shared history", details: err?.message || String(err) });
+    }
+  });
 
   // API Route for Model Inference
   app.post("/api/classify", async (req, res) => {

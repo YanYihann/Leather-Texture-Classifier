@@ -17,6 +17,8 @@ const MAX_HISTORY_ITEMS = 30;
 const MAX_PERSISTED_ITEMS = 30;
 const UI_LANG_KEY = 'ui_language';
 const UI_THEME_KEY = 'ui_theme';
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const historyEndpoint = apiBaseUrl ? `${apiBaseUrl}/api/history` : '/api/history';
 
 function getPreviewUrl(scan: ScanResult) {
   const fallback = (scan.matches?.[0] as any)?.referenceUrl as string | undefined;
@@ -83,22 +85,39 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
-    const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
-    if (!saved) {
-      setHistory(MOCK_SCANS);
-      return;
-    }
+    const loadHistory = async () => {
+      try {
+        const response = await fetch(historyEndpoint);
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data?.history)) {
+            setHistory(data.history.slice(0, MAX_HISTORY_ITEMS));
+            return;
+          }
+        }
+      } catch {
+        // Fallback to local cache if server is unavailable.
+      }
 
-    try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        setHistory(parsed);
-      } else {
+      const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
+      if (!saved) {
+        setHistory(MOCK_SCANS);
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setHistory(parsed);
+        } else {
+          setHistory(MOCK_SCANS);
+        }
+      } catch {
         setHistory(MOCK_SCANS);
       }
-    } catch {
-      setHistory(MOCK_SCANS);
-    }
+    };
+
+    void loadHistory();
   }, []);
 
   useEffect(() => {
@@ -242,6 +261,11 @@ export default function App() {
       };
       setLastScan(newScan);
       setHistory(prev => [newScan, ...prev].slice(0, MAX_HISTORY_ITEMS));
+      void fetch(historyEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scan: newScan }),
+      });
     } catch (err) {
       console.error("Classification error:", err);
     } finally {
@@ -270,6 +294,11 @@ export default function App() {
         };
         setLastScan(newScan);
         setHistory(prev => [newScan, ...prev].slice(0, MAX_HISTORY_ITEMS));
+        void fetch(historyEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scan: newScan }),
+        });
       } catch (err) {
         console.error("Classification error:", err);
       } finally {
@@ -573,6 +602,7 @@ export default function App() {
                     if (!window.confirm(text.clearConfirm)) return;
                     setHistory([]);
                     localStorage.removeItem(HISTORY_STORAGE_KEY);
+                    void fetch(historyEndpoint, { method: 'DELETE' });
                   }}
                   className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors font-label uppercase tracking-wider text-on-surface-variant"
                 >
