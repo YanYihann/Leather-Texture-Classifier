@@ -1173,26 +1173,26 @@ export default function App() {
                   <div 
                     key={scan.id}
                     onClick={() => { setLastScan(scan); setCurrentView('result'); }}
-                    className="relative flex items-start gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high transition-colors cursor-pointer"
+                    className="relative flex items-center gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high transition-colors cursor-pointer"
                   >
-                    <span className="absolute top-3 right-3 label-sm px-3 py-1 rounded-lg bg-tertiary/90 text-on-tertiary">
+                    <span className="absolute top-2.5 right-2.5 label-sm px-3.5 py-1.5 rounded-lg bg-tertiary/95 text-on-tertiary text-sm">
                       {scan.matches[0].confidence}%
                     </span>
-                    <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
+                    <div className="w-28 h-28 rounded-xl overflow-hidden flex-shrink-0">
                       {getPreviewUrl(scan) ? (
                         <img src={getPreviewUrl(scan)} alt={scan.matches[0].label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-full h-full bg-surface-container-highest" />
                       )}
                     </div>
-                    <div className="flex-grow min-w-0 flex flex-col">
-                      <h4 className="font-headline font-bold text-xl leading-tight pr-20">{scan.matches[0].label}</h4>
-                      <div className="mt-2 space-y-1">
-                        <p className="text-base text-outline flex items-center gap-2">
+                    <div className="flex-grow min-w-0 flex flex-col justify-center">
+                      <h4 className="font-headline font-bold text-2xl leading-tight pr-24">{scan.matches[0].label}</h4>
+                      <div className="mt-2 space-y-1.5">
+                        <p className="text-lg text-outline flex items-center gap-2">
                           <CalendarDays className="w-4 h-4" />
                           {formatHistoryDate(scan.timestamp)}
                         </p>
-                        <p className="text-base text-outline flex items-center gap-2">
+                        <p className="text-lg text-outline flex items-center gap-2">
                           <Clock3 className="w-4 h-4" />
                           {formatHistoryTime(scan.timestamp)}
                         </p>
@@ -1202,9 +1202,7 @@ export default function App() {
                           {noteLabel}: {scan.note}
                         </p>
                       )}
-                      <div className="mt-3 flex items-center justify-between">
-                        <div />
-                        <div className="flex items-center gap-2">
+                      <div className="mt-4 flex items-center justify-end gap-2 pr-1">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1231,13 +1229,12 @@ export default function App() {
                             className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
                               selectedHistoryIds.includes(scan.id)
                                 ? 'bg-primary border-primary text-on-primary'
-                                : 'bg-[#1b1b1b] border-outline-variant text-transparent'
+                                : 'bg-[#2a2a2a] border-[#3a3a3a] text-transparent'
                             }`}
                             title={deleteSelectedLabel}
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
-                        </div>
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-outline" />
