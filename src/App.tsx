@@ -273,6 +273,7 @@ export default function App() {
   const clearSelectLabel = language === 'zh' ? '取消全选' : 'Clear';
   const deleteSelectedLabel = language === 'zh' ? '删除已选' : 'Delete Selected';
   const deleteSelectedConfirm = language === 'zh' ? '确认删除已选历史记录吗？' : 'Delete selected history items?';
+  const deleteFailedMsg = language === 'zh' ? '删除失败：后端未成功保存，请稍后重试。' : 'Delete failed: server did not persist the change.';
 
   const scanText = language === 'zh'
     ? {
@@ -384,15 +385,36 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, [isScanning]);
 
-  const deleteHistoryItem = (id: string) => {
+  const refreshHistoryFromServer = async () => {
+    try {
+      const response = await fetch(historyEndpoint);
+      if (!response.ok) return false;
+      const data = await response.json();
+      if (!Array.isArray(data?.history)) return false;
+      setHistory(data.history.slice(0, MAX_HISTORY_ITEMS));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const deleteHistoryItem = async (id: string) => {
     if (!window.confirm(deleteItemConfirm)) return;
+    const previousHistory = history;
     setHistory((prev) => prev.filter((item) => item.id !== id));
     setSelectedHistoryIds((prev) => prev.filter((v) => v !== id));
     if (lastScan?.id === id) {
       setLastScan(null);
       setCurrentView('home');
     }
-    void fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    try {
+      const res = await fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`DELETE failed: ${res.status}`);
+      await refreshHistoryFromServer();
+    } catch {
+      setHistory(previousHistory);
+      alert(deleteFailedMsg);
+    }
   };
 
   const toggleHistorySelection = (id: string) => {
@@ -421,19 +443,27 @@ export default function App() {
     });
   };
 
-  const deleteSelectedHistory = () => {
+  const deleteSelectedHistory = async () => {
     if (!selectedHistoryIds.length) return;
     if (!window.confirm(deleteSelectedConfirm)) return;
+    const previousHistory = history;
     const idSet = new Set(selectedHistoryIds);
     setHistory((prev) => prev.filter((item) => !idSet.has(item.id)));
     if (lastScan && idSet.has(lastScan.id)) {
       setLastScan(null);
       setCurrentView('home');
     }
-    for (const id of selectedHistoryIds) {
-      void fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    try {
+      const results = await Promise.all(
+        selectedHistoryIds.map((id) => fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' }))
+      );
+      if (results.some((r) => !r.ok)) throw new Error('Some deletes failed');
+      setSelectedHistoryIds([]);
+      await refreshHistoryFromServer();
+    } catch {
+      setHistory(previousHistory);
+      alert(deleteFailedMsg);
     }
-    setSelectedHistoryIds([]);
   };
 
   const editHistoryNote = (id: string) => {
@@ -1148,7 +1178,7 @@ export default function App() {
                   {allVisibleSelected ? clearSelectLabel : selectAllLabel}
                 </button>
                 <button
-                  onClick={deleteSelectedHistory}
+                  onClick={() => void deleteSelectedHistory()}
                   disabled={!selectedHistoryIds.length}
                   className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -1158,10 +1188,20 @@ export default function App() {
                   onClick={() => {
                     if (!history.length) return;
                     if (!window.confirm(text.clearConfirm)) return;
+                    const previousHistory = history;
                     setHistory([]);
                     setSelectedHistoryIds([]);
                     localStorage.removeItem(HISTORY_STORAGE_KEY);
-                    void fetch(historyEndpoint, { method: 'DELETE' });
+                    void (async () => {
+                      try {
+                        const res = await fetch(historyEndpoint, { method: 'DELETE' });
+                        if (!res.ok) throw new Error(`DELETE all failed: ${res.status}`);
+                        await refreshHistoryFromServer();
+                      } catch {
+                        setHistory(previousHistory);
+                        alert(deleteFailedMsg);
+                      }
+                    })();
                   }}
                   className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors font-label uppercase tracking-wider text-on-surface-variant"
                 >
@@ -1213,13 +1253,13 @@ export default function App() {
                           >
                             {editNoteLabel}
                           </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteHistoryItem(scan.id);
-                            }}
-                            className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-red-500/20 transition-colors"
-                          >
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void deleteHistoryItem(scan.id);
+                          }}
+                          className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-red-500/20 transition-colors"
+                        >
                             {deleteItemLabel}
                           </button>
                           <button
