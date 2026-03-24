@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScanResult, MOCK_SCANS, LEATHER_CATEGORIES, AVG_PRECISION } from './types';
@@ -97,6 +97,8 @@ function formatToMinute(timestamp: number) {
 }
 
 export default function App() {
+  const SCAN_FRAME = { xPct: 0.22, yPct: 0.22, widthPct: 0.56, heightPct: 0.42 };
+  const SCAN_CONTAINER_ASPECT = 4 / 5;
   const [currentView, setCurrentView] = useState<View>('home');
   const [history, setHistory] = useState<ScanResult[]>([]);
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
@@ -107,6 +109,7 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>('dark');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
+  const scanVideoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -240,6 +243,34 @@ export default function App() {
   const deleteSelectedLabel = language === 'zh' ? '删除已选' : 'Delete Selected';
   const deleteSelectedConfirm = language === 'zh' ? '确认删除已选历史记录吗？' : 'Delete selected history items?';
 
+  const scanText = language === 'zh'
+    ? {
+        liveScanner: '实时扫描',
+        scanWorkspace: '扫描工作台',
+        optimalDistance: '最佳距离',
+        distanceGuide: '距表面 8-12 厘米',
+        capture: '拍照',
+        takePhoto: '拍照',
+        gallery: '相册',
+        qualityTipTitle: '拍摄质量提示',
+        qualityTipBody: '请拍摄清晰的皮革近景纹理，避免强反光和重阴影。',
+        retake: '重拍',
+        startAnalysis: '开始分析',
+      }
+    : {
+        liveScanner: 'Live Scanner',
+        scanWorkspace: 'Scan Workspace',
+        optimalDistance: 'Optimal Distance',
+        distanceGuide: '8-12 cm from surface',
+        capture: 'Capture',
+        takePhoto: 'Take Photo',
+        gallery: 'Gallery',
+        qualityTipTitle: 'Capture Quality Tip',
+        qualityTipBody: 'Use a clear close-up texture image. Avoid heavy glare and deep shadow.',
+        retake: 'Retake',
+        startAnalysis: 'Start Analysis',
+      };
+
   const deleteHistoryItem = (id: string) => {
     if (!window.confirm(deleteItemConfirm)) return;
     setHistory((prev) => prev.filter((item) => item.id !== id));
@@ -341,16 +372,40 @@ export default function App() {
   };
 
   const captureImage = () => {
-    const video = document.querySelector('video');
+    const video = scanVideoRef.current;
     if (!video) return;
 
+    const sourceWidth = video.videoWidth;
+    const sourceHeight = video.videoHeight;
+    if (!sourceWidth || !sourceHeight) return;
+
+    const sourceAspect = sourceWidth / sourceHeight;
+    let visibleX = 0;
+    let visibleY = 0;
+    let visibleWidth = sourceWidth;
+    let visibleHeight = sourceHeight;
+
+    // Mirror object-cover behavior so capture area matches the on-screen frame exactly.
+    if (sourceAspect > SCAN_CONTAINER_ASPECT) {
+      visibleWidth = sourceHeight * SCAN_CONTAINER_ASPECT;
+      visibleX = (sourceWidth - visibleWidth) / 2;
+    } else if (sourceAspect < SCAN_CONTAINER_ASPECT) {
+      visibleHeight = sourceWidth / SCAN_CONTAINER_ASPECT;
+      visibleY = (sourceHeight - visibleHeight) / 2;
+    }
+
+    const cropX = Math.round(visibleX + visibleWidth * SCAN_FRAME.xPct);
+    const cropY = Math.round(visibleY + visibleHeight * SCAN_FRAME.yPct);
+    const cropWidth = Math.round(visibleWidth * SCAN_FRAME.widthPct);
+    const cropHeight = Math.round(visibleHeight * SCAN_FRAME.heightPct);
+
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
     const base64 = canvas.toDataURL('image/jpeg');
     stopCamera();
     setScanDraftImage(base64);
@@ -588,7 +643,7 @@ export default function App() {
               </div>
 
               <div className="relative rounded-2xl overflow-hidden bg-surface-container-low border border-outline-variant/20">
-                <div className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full bg-black/45 text-[10px] tracking-[0.2em] uppercase">{cameraStream ? 'Live Scanner' : 'Scan Workspace'}</div>
+                <div className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full bg-black/45 text-[10px] tracking-[0.2em] uppercase">{cameraStream ? scanText.liveScanner : scanText.scanWorkspace}</div>
                 {cameraStream && (
                   <button
                     onClick={toggleFlash}
@@ -603,7 +658,10 @@ export default function App() {
                     <video 
                       autoPlay 
                       playsInline 
-                      ref={(el) => { if (el && cameraStream) el.srcObject = cameraStream; }}
+                      ref={(el) => {
+                        scanVideoRef.current = el;
+                        if (el && cameraStream) el.srcObject = cameraStream;
+                      }}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -615,15 +673,19 @@ export default function App() {
                     />
                   )}
                   <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute inset-8 border border-primary/35 rounded-xl" />
-                    <div className="absolute top-6 left-6 w-10 h-10 border-t-4 border-l-4 border-primary/80 rounded-tl-md" />
-                    <div className="absolute top-6 right-6 w-10 h-10 border-t-4 border-r-4 border-primary/80 rounded-tr-md" />
-                    <div className="absolute bottom-6 left-6 w-10 h-10 border-b-4 border-l-4 border-primary/80 rounded-bl-md" />
-                    <div className="absolute bottom-6 right-6 w-10 h-10 border-b-4 border-r-4 border-primary/80 rounded-br-md" />
+                    <div
+                      className="absolute border border-primary/45 rounded-xl"
+                      style={{
+                        left: `${SCAN_FRAME.xPct * 100}%`,
+                        top: `${SCAN_FRAME.yPct * 100}%`,
+                        width: `${SCAN_FRAME.widthPct * 100}%`,
+                        height: `${SCAN_FRAME.heightPct * 100}%`,
+                      }}
+                    />
                   </div>
                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-black/45 backdrop-blur-sm text-center">
-                    <p className="text-xs uppercase tracking-widest text-primary">Optimal Distance</p>
-                    <p className="text-sm text-on-surface-variant">8-12 cm from surface</p>
+                    <p className="text-xs uppercase tracking-widest text-primary">{scanText.optimalDistance}</p>
+                    <p className="text-sm text-on-surface-variant">{scanText.distanceGuide}</p>
                   </div>
                 </div>
               </div>
@@ -634,28 +696,18 @@ export default function App() {
                   className="py-4 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-headline font-bold text-base flex items-center justify-center gap-2"
                 >
                   <Camera className="w-5 h-5" />
-                  {cameraStream ? 'Capture' : 'Take Photo'}
+                  {cameraStream ? scanText.capture : scanText.takePhoto}
                 </button>
                 <label className="py-4 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-headline font-bold text-base flex items-center justify-center gap-2 cursor-pointer">
                   <ImageIcon className="w-5 h-5" />
-                  Gallery
+                  {scanText.gallery}
                   <input type="file" className="hidden" accept="image/*" onChange={handleScanFileUpload} />
                 </label>
               </div>
 
-              <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0">
-                  <img
-                    src="https://images.unsplash.com/photo-1527613426441-4da17471b66d?q=80&w=200&auto=format&fit=crop"
-                    alt="Quality Tip"
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-                <div>
-                  <p className="font-headline font-bold text-base">Capture Quality Tip</p>
-                  <p className="text-sm text-on-surface-variant">Use a clear close-up texture image. Avoid heavy glare and deep shadow.</p>
-                </div>
+              <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15">
+                <p className="font-headline font-bold text-base">{scanText.qualityTipTitle}</p>
+                <p className="text-sm text-on-surface-variant mt-1">{scanText.qualityTipBody}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -665,7 +717,7 @@ export default function App() {
                   className="py-4 rounded-xl bg-surface-container-high text-on-surface font-headline font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <RotateCcw className="w-5 h-5" />
-                  Retake
+                  {scanText.retake}
                 </button>
                 <button
                   onClick={startAnalysisFromScan}
@@ -673,7 +725,7 @@ export default function App() {
                   className="py-4 rounded-xl bg-primary text-on-primary font-headline font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <Play className="w-5 h-5" />
-                  Start Analysis
+                  {scanText.startAnalysis}
                 </button>
               </div>
             </motion.div>
