@@ -75,6 +75,27 @@ function createThumbnailDataUrl(dataUrl: string, maxSide = 512, quality = 0.72):
   });
 }
 
+function detectDeviceLabel() {
+  const ua = navigator.userAgent || "";
+  if (/iPhone/i.test(ua)) return "iPhone";
+  if (/iPad/i.test(ua)) return "iPad";
+  if (/Android/i.test(ua)) return "Android";
+  if (/Windows/i.test(ua)) return "Windows";
+  if (/Mac OS X|Macintosh/i.test(ua)) return "macOS";
+  if (/Linux/i.test(ua)) return "Linux";
+  return "Unknown";
+}
+
+function formatToMinute(timestamp: number) {
+  const dt = new Date(timestamp);
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  const hh = String(dt.getHours()).padStart(2, "0");
+  const mi = String(dt.getMinutes()).padStart(2, "0");
+  return `${yyyy}/${mm}/${dd} ${hh}:${mi}`;
+}
+
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('home');
   const [history, setHistory] = useState<ScanResult[]>([]);
@@ -200,6 +221,8 @@ export default function App() {
     navProfile: 'Profile',
     confidence: 'confidence',
   };
+  const deviceLabel = language === 'zh' ? '设备' : 'Device';
+  const timeLabel = language === 'zh' ? '时间' : 'Time';
 
   const startCamera = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -257,7 +280,8 @@ export default function App() {
         id: Math.random().toString(36).substr(2, 9),
         timestamp: Date.now(),
         imageUrl: historyImage,
-        matches
+        matches,
+        device: detectDeviceLabel(),
       };
       setLastScan(newScan);
       setHistory(prev => [newScan, ...prev].slice(0, MAX_HISTORY_ITEMS));
@@ -290,7 +314,8 @@ export default function App() {
           id: Math.random().toString(36).substr(2, 9),
           timestamp: Date.now(),
           imageUrl: historyImage,
-          matches
+          matches,
+          device: detectDeviceLabel(),
         };
         setLastScan(newScan);
         setHistory(prev => [newScan, ...prev].slice(0, MAX_HISTORY_ITEMS));
@@ -440,6 +465,9 @@ export default function App() {
                           <Verified className="w-3.5 h-3.5 text-tertiary fill-current" />
                           <span className="font-body text-xs text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
                         </div>
+                        <p className="font-body text-[11px] text-outline mt-1">
+                          {deviceLabel}: {scan.device || 'Unknown'} | {timeLabel}: {formatToMinute(scan.timestamp)}
+                        </p>
                       </div>
                       <ChevronRight className="w-5 h-5 text-outline group-hover:text-primary transition-colors" />
                     </div>
@@ -626,9 +654,12 @@ export default function App() {
                     </div>
                     <div className="flex-grow">
                       <p className="text-[10px] text-outline uppercase tracking-wider mb-1">
-                        {new Date(scan.timestamp).toLocaleDateString()}
+                        {timeLabel}: {formatToMinute(scan.timestamp)}
                       </p>
                       <h4 className="font-headline font-bold text-base">{scan.matches[0].label}</h4>
+                      <p className="font-body text-[11px] text-outline mb-1">
+                        {deviceLabel}: {scan.device || 'Unknown'}
+                      </p>
                       <div className="flex items-center gap-2 mt-1">
                         <Verified className="w-3.5 h-3.5 text-tertiary fill-current" />
                         <span className="font-body text-xs text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>

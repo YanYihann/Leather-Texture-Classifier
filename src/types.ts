@@ -9,6 +9,7 @@ export interface ScanResult {
   timestamp: number;
   imageUrl: string;
   matches: LeatherMatch[];
+  device?: string;
 }
 
 export const LEATHER_CATEGORIES = 203;
