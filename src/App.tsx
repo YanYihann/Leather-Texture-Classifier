@@ -106,6 +106,8 @@ export default function App() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [scanDraftImage, setScanDraftImage] = useState<string | null>(null);
   const [isFlashOn, setIsFlashOn] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number } | null>(null);
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>('dark');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
@@ -256,6 +258,8 @@ export default function App() {
         qualityTipBody: '请拍摄清晰的皮革近景纹理，避免强反光和重阴影。',
         retake: '重拍',
         startAnalysis: '开始分析',
+        zoom: '缩放',
+        zoomUnsupported: '当前设备不支持相机缩放',
       }
     : {
         liveScanner: 'Live Scanner',
@@ -269,6 +273,8 @@ export default function App() {
         qualityTipBody: 'Use a clear close-up texture image. Avoid heavy glare and deep shadow.',
         retake: 'Retake',
         startAnalysis: 'Start Analysis',
+        zoom: 'Zoom',
+        zoomUnsupported: 'This device does not support camera zoom',
       };
 
   const deleteHistoryItem = (id: string) => {
@@ -339,6 +345,22 @@ export default function App() {
     for (const constraints of attempts) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const track = stream.getVideoTracks()[0];
+        const caps = (track?.getCapabilities?.() || {}) as any;
+        const settings = (track?.getSettings?.() || {}) as any;
+
+        if (caps.zoom && typeof caps.zoom.min === 'number' && typeof caps.zoom.max === 'number') {
+          const min = Number(caps.zoom.min);
+          const max = Number(caps.zoom.max);
+          const step = typeof caps.zoom.step === 'number' && caps.zoom.step > 0 ? Number(caps.zoom.step) : 0.1;
+          const initialZoom = typeof settings.zoom === 'number' ? Number(settings.zoom) : min;
+          setZoomRange({ min, max, step });
+          setZoomLevel(Math.min(max, Math.max(min, initialZoom)));
+        } else {
+          setZoomRange(null);
+          setZoomLevel(1);
+        }
+
         setCameraStream(stream);
         setCurrentView('scan');
         setScanDraftImage(null);
@@ -357,8 +379,20 @@ export default function App() {
       cameraStream.getTracks().forEach(track => track.stop());
       setCameraStream(null);
       setIsFlashOn(false);
+      setZoomRange(null);
+      setZoomLevel(1);
     }
   };
+
+  useEffect(() => {
+    if (!cameraStream || !zoomRange) return;
+    const track = cameraStream.getVideoTracks()[0];
+    if (!track) return;
+    const clamped = Math.min(zoomRange.max, Math.max(zoomRange.min, zoomLevel));
+    void track.applyConstraints({ advanced: [{ zoom: clamped } as any] }).catch(() => {
+      // Keep UI responsive even when some devices reject dynamic zoom updates.
+    });
+  }, [cameraStream, zoomLevel, zoomRange]);
 
   const toggleFlash = async () => {
     if (!cameraStream) return;
@@ -704,6 +738,28 @@ export default function App() {
                   <input type="file" className="hidden" accept="image/*" onChange={handleScanFileUpload} />
                 </label>
               </div>
+
+              {cameraStream && (
+                <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-headline font-bold text-base">{scanText.zoom}</p>
+                    <p className="text-sm text-on-surface-variant">{zoomLevel.toFixed(1)}x</p>
+                  </div>
+                  {zoomRange ? (
+                    <input
+                      type="range"
+                      min={zoomRange.min}
+                      max={zoomRange.max}
+                      step={zoomRange.step}
+                      value={zoomLevel}
+                      onChange={(e) => setZoomLevel(Number(e.target.value))}
+                      className="w-full accent-primary"
+                    />
+                  ) : (
+                    <p className="text-sm text-on-surface-variant">{scanText.zoomUnsupported}</p>
+                  )}
+                </div>
+              )}
 
               <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15">
                 <p className="font-headline font-bold text-base">{scanText.qualityTipTitle}</p>
