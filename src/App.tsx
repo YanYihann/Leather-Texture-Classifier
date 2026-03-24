@@ -130,6 +130,7 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>('dark');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
+  const [historySyncMode, setHistorySyncMode] = useState<'server' | 'local'>('local');
   const [historySearch, setHistorySearch] = useState('');
   const [previewImage, setPreviewImage] = useState<{ src: string; title: string } | null>(null);
   const scanVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -141,6 +142,7 @@ export default function App() {
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data?.history)) {
+            setHistorySyncMode('server');
             setHistory(data.history.slice(0, MAX_HISTORY_ITEMS));
             return;
           }
@@ -148,6 +150,7 @@ export default function App() {
       } catch {
         // Fallback to local cache if server is unavailable.
       }
+      setHistorySyncMode('local');
 
       const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
       if (!saved) {
@@ -386,6 +389,7 @@ export default function App() {
   }, [isScanning]);
 
   const refreshHistoryFromServer = async () => {
+    if (historySyncMode !== 'server') return false;
     try {
       const response = await fetch(historyEndpoint);
       if (!response.ok) return false;
@@ -407,6 +411,7 @@ export default function App() {
       setLastScan(null);
       setCurrentView('home');
     }
+    if (historySyncMode !== 'server') return;
     try {
       const res = await fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`DELETE failed: ${res.status}`);
@@ -453,6 +458,10 @@ export default function App() {
       setLastScan(null);
       setCurrentView('home');
     }
+    if (historySyncMode !== 'server') {
+      setSelectedHistoryIds([]);
+      return;
+    }
     try {
       const results = await Promise.all(
         selectedHistoryIds.map((id) => fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' }))
@@ -475,6 +484,7 @@ export default function App() {
     if (lastScan?.id === id) {
       setLastScan((prev) => (prev ? { ...prev, note } : prev));
     }
+    if (historySyncMode !== 'server') return;
     void fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -590,11 +600,13 @@ export default function App() {
       };
       setLastScan(newScan);
       setHistory(prev => [newScan, ...prev].slice(0, MAX_HISTORY_ITEMS));
-      void fetch(historyEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scan: newScan }),
-      });
+      if (historySyncMode === 'server') {
+        void fetch(historyEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scan: newScan }),
+        });
+      }
     } catch (err) {
       console.error("Classification error:", err);
     } finally {
@@ -1192,6 +1204,7 @@ export default function App() {
                     setHistory([]);
                     setSelectedHistoryIds([]);
                     localStorage.removeItem(HISTORY_STORAGE_KEY);
+                    if (historySyncMode !== 'server') return;
                     void (async () => {
                       try {
                         const res = await fetch(historyEndpoint, { method: 'DELETE' });
