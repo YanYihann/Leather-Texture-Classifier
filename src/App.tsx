@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play, FileUp, Cpu, CheckCircle2, Circle, Hourglass, Database, Search, CalendarDays, Clock3 } from 'lucide-react';
+import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play, FileUp, Cpu, CheckCircle2, Circle, Hourglass, Database, Search, CalendarDays, Clock3, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScanResult, MOCK_SCANS, LEATHER_CATEGORIES, AVG_PRECISION } from './types';
 import { classifyLeather } from './services/gemini';
@@ -1126,7 +1126,7 @@ export default function App() {
             >
               <div>
                 <p className="label-sm text-primary/80">{text.archive}</p>
-                <h2 className="font-headline font-extrabold text-5xl tracking-tight mt-2">{text.scanHistory}</h2>
+                <h2 className="font-headline font-bold text-4xl tracking-tight mt-2">{text.scanHistory}</h2>
               </div>
 
               <div className="relative">
@@ -1173,7 +1173,7 @@ export default function App() {
                   <div 
                     key={scan.id}
                     onClick={() => { setLastScan(scan); setCurrentView('result'); }}
-                    className="relative flex items-center gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high transition-colors cursor-pointer"
+                    className="relative flex items-start gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high transition-colors cursor-pointer"
                   >
                     <span className="absolute top-3 right-3 label-sm px-3 py-1 rounded-lg bg-tertiary/90 text-on-tertiary">
                       {scan.matches[0].confidence}%
@@ -1185,60 +1185,58 @@ export default function App() {
                         <div className="w-full h-full bg-surface-container-highest" />
                       )}
                     </div>
-                    <div className="flex-grow">
+                    <div className="flex-grow min-w-0 flex flex-col">
                       <h4 className="font-headline font-bold text-lg leading-tight pr-20">{scan.matches[0].label}</h4>
                       <div className="mt-2 space-y-1">
                         <p className="body-md text-outline flex items-center gap-2">
                           <CalendarDays className="w-4 h-4" />
-                          ({formatHistoryDate(scan.timestamp)})
+                          {formatHistoryDate(scan.timestamp)}
                         </p>
                         <p className="body-md text-outline flex items-center gap-2">
                           <Clock3 className="w-4 h-4" />
                           {formatHistoryTime(scan.timestamp)}
                         </p>
                       </div>
-                      <p className="body-md text-outline mb-1">
-                        {deviceLabel}: {scan.device || 'Unknown'}
-                      </p>
                       {scan.note && (
-                        <p className="body-md text-on-surface-variant mb-1 line-clamp-2">
+                        <p className="body-md text-on-surface-variant mt-2 line-clamp-2">
                           {noteLabel}: {scan.note}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 mt-1">
-                        <Verified className="w-3.5 h-3.5 text-tertiary fill-current" />
-                        <span className="body-md text-on-surface-variant">{scan.matches[0].confidence}%</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedHistoryIds.includes(scan.id)}
-                          onChange={(e) => {
+                      <div className="mt-3 flex items-center justify-between">
+                        <button
+                          onClick={(e) => {
                             e.stopPropagation();
                             toggleHistorySelection(scan.id);
                           }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-4 h-4 accent-primary bg-surface-container-high border border-outline-variant rounded"
+                          className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                            selectedHistoryIds.includes(scan.id)
+                              ? 'bg-primary border-primary text-on-primary'
+                              : 'bg-[#1b1b1b] border-outline-variant text-transparent'
+                          }`}
                           title={deleteSelectedLabel}
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            editHistoryNote(scan.id);
-                          }}
-                          className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-surface-variant transition-colors"
                         >
-                          {editNoteLabel}
+                          <Check className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteHistoryItem(scan.id);
-                          }}
-                          className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-red-500/20 transition-colors"
-                        >
-                          {deleteItemLabel}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              editHistoryNote(scan.id);
+                            }}
+                            className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-surface-variant transition-colors"
+                          >
+                            {editNoteLabel}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteHistoryItem(scan.id);
+                            }}
+                            className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-red-500/20 transition-colors"
+                          >
+                            {deleteItemLabel}
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-outline" />
