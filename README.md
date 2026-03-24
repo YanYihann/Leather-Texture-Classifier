@@ -19,6 +19,17 @@ View your app in AI Studio: https://ai.studio/apps/347d8afa-1eaf-45a9-a469-17e72
 3. Run the app:
    `npm run dev`
 
+## One-Click Local + Phone Access (Windows)
+
+Use these scripts in the project root:
+
+- `start_local_and_tunnel.bat`
+  - Starts local dev server
+  - Starts Cloudflare Tunnel
+  - Opens `http://localhost:3000` in your browser
+- `stop_local_and_tunnel.bat`
+  - Stops the local server and tunnel quickly
+
 ## Deploy to GitHub Pages
 
 This repo includes a workflow at `.github/workflows/deploy-pages.yml`.
