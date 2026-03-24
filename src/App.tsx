@@ -99,6 +99,9 @@ function formatToMinute(timestamp: number) {
 export default function App() {
   const SCAN_FRAME = { xPct: 0.22, yPct: 0.22, widthPct: 0.56, heightPct: 0.42 };
   const SCAN_CONTAINER_ASPECT = 4 / 5;
+  const FRAME_SCALE_MIN = 0.7;
+  const FRAME_SCALE_MAX = 1.3;
+  const FRAME_SCALE_STEP = 0.05;
   const [currentView, setCurrentView] = useState<View>('home');
   const [history, setHistory] = useState<ScanResult[]>([]);
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
@@ -106,8 +109,7 @@ export default function App() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [scanDraftImage, setScanDraftImage] = useState<string | null>(null);
   const [isFlashOn, setIsFlashOn] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number } | null>(null);
+  const [frameScale, setFrameScale] = useState(1);
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>('dark');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
@@ -258,8 +260,7 @@ export default function App() {
         qualityTipBody: '请拍摄清晰的皮革近景纹理，避免强反光和重阴影。',
         retake: '重拍',
         startAnalysis: '开始分析',
-        zoom: '缩放',
-        zoomUnsupported: '当前设备不支持相机缩放',
+        frameSize: '取景框大小',
       }
     : {
         liveScanner: 'Live Scanner',
@@ -273,9 +274,18 @@ export default function App() {
         qualityTipBody: 'Use a clear close-up texture image. Avoid heavy glare and deep shadow.',
         retake: 'Retake',
         startAnalysis: 'Start Analysis',
-        zoom: 'Zoom',
-        zoomUnsupported: 'This device does not support camera zoom',
+        frameSize: 'Frame Size',
       };
+  const scaledWidth = SCAN_FRAME.widthPct * frameScale;
+  const scaledHeight = SCAN_FRAME.heightPct * frameScale;
+  const frameWidthPct = Math.min(0.9, Math.max(0.2, scaledWidth));
+  const frameHeightPct = Math.min(0.8, Math.max(0.15, scaledHeight));
+  const scanFrame = {
+    xPct: SCAN_FRAME.xPct + (SCAN_FRAME.widthPct - frameWidthPct) / 2,
+    yPct: SCAN_FRAME.yPct + (SCAN_FRAME.heightPct - frameHeightPct) / 2,
+    widthPct: frameWidthPct,
+    heightPct: frameHeightPct,
+  };
 
   const deleteHistoryItem = (id: string) => {
     if (!window.confirm(deleteItemConfirm)) return;
@@ -345,22 +355,6 @@ export default function App() {
     for (const constraints of attempts) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        const track = stream.getVideoTracks()[0];
-        const caps = (track?.getCapabilities?.() || {}) as any;
-        const settings = (track?.getSettings?.() || {}) as any;
-
-        if (caps.zoom && typeof caps.zoom.min === 'number' && typeof caps.zoom.max === 'number') {
-          const min = Number(caps.zoom.min);
-          const max = Number(caps.zoom.max);
-          const step = typeof caps.zoom.step === 'number' && caps.zoom.step > 0 ? Number(caps.zoom.step) : 0.1;
-          const initialZoom = typeof settings.zoom === 'number' ? Number(settings.zoom) : min;
-          setZoomRange({ min, max, step });
-          setZoomLevel(Math.min(max, Math.max(min, initialZoom)));
-        } else {
-          setZoomRange(null);
-          setZoomLevel(1);
-        }
-
         setCameraStream(stream);
         setCurrentView('scan');
         setScanDraftImage(null);
@@ -379,20 +373,8 @@ export default function App() {
       cameraStream.getTracks().forEach(track => track.stop());
       setCameraStream(null);
       setIsFlashOn(false);
-      setZoomRange(null);
-      setZoomLevel(1);
     }
   };
-
-  useEffect(() => {
-    if (!cameraStream || !zoomRange) return;
-    const track = cameraStream.getVideoTracks()[0];
-    if (!track) return;
-    const clamped = Math.min(zoomRange.max, Math.max(zoomRange.min, zoomLevel));
-    void track.applyConstraints({ advanced: [{ zoom: clamped } as any] }).catch(() => {
-      // Keep UI responsive even when some devices reject dynamic zoom updates.
-    });
-  }, [cameraStream, zoomLevel, zoomRange]);
 
   const toggleFlash = async () => {
     if (!cameraStream) return;
@@ -428,10 +410,10 @@ export default function App() {
       visibleY = (sourceHeight - visibleHeight) / 2;
     }
 
-    const cropX = Math.round(visibleX + visibleWidth * SCAN_FRAME.xPct);
-    const cropY = Math.round(visibleY + visibleHeight * SCAN_FRAME.yPct);
-    const cropWidth = Math.round(visibleWidth * SCAN_FRAME.widthPct);
-    const cropHeight = Math.round(visibleHeight * SCAN_FRAME.heightPct);
+    const cropX = Math.round(visibleX + visibleWidth * scanFrame.xPct);
+    const cropY = Math.round(visibleY + visibleHeight * scanFrame.yPct);
+    const cropWidth = Math.round(visibleWidth * scanFrame.widthPct);
+    const cropHeight = Math.round(visibleHeight * scanFrame.heightPct);
 
     const canvas = document.createElement('canvas');
     canvas.width = cropWidth;
@@ -710,10 +692,10 @@ export default function App() {
                     <div
                       className="absolute border border-primary/45 rounded-xl"
                       style={{
-                        left: `${SCAN_FRAME.xPct * 100}%`,
-                        top: `${SCAN_FRAME.yPct * 100}%`,
-                        width: `${SCAN_FRAME.widthPct * 100}%`,
-                        height: `${SCAN_FRAME.heightPct * 100}%`,
+                        left: `${scanFrame.xPct * 100}%`,
+                        top: `${scanFrame.yPct * 100}%`,
+                        width: `${scanFrame.widthPct * 100}%`,
+                        height: `${scanFrame.heightPct * 100}%`,
                       }}
                     />
                   </div>
@@ -742,22 +724,18 @@ export default function App() {
               {cameraStream && (
                 <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="font-headline font-bold text-base">{scanText.zoom}</p>
-                    <p className="text-sm text-on-surface-variant">{zoomLevel.toFixed(1)}x</p>
+                    <p className="font-headline font-bold text-base">{scanText.frameSize}</p>
+                    <p className="text-sm text-on-surface-variant">{Math.round(frameScale * 100)}%</p>
                   </div>
-                  {zoomRange ? (
-                    <input
-                      type="range"
-                      min={zoomRange.min}
-                      max={zoomRange.max}
-                      step={zoomRange.step}
-                      value={zoomLevel}
-                      onChange={(e) => setZoomLevel(Number(e.target.value))}
-                      className="w-full accent-primary"
-                    />
-                  ) : (
-                    <p className="text-sm text-on-surface-variant">{scanText.zoomUnsupported}</p>
-                  )}
+                  <input
+                    type="range"
+                    min={FRAME_SCALE_MIN}
+                    max={FRAME_SCALE_MAX}
+                    step={FRAME_SCALE_STEP}
+                    value={frameScale}
+                    onChange={(e) => setFrameScale(Number(e.target.value))}
+                    className="w-full accent-primary"
+                  />
                 </div>
               )}
 
