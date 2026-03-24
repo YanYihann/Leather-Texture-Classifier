@@ -32,3 +32,15 @@ This repo includes a workflow at `.github/workflows/deploy-pages.yml`.
 Important:
 - GitHub Pages only serves static frontend files.
 - `/api/classify` is not hosted by GitHub Pages. You must deploy backend API separately and set `VITE_API_BASE_URL`.
+
+## Deploy Backend on Render
+
+This repo includes `Dockerfile` and `render.yaml` for Render web service deployment.
+
+1. Create a new Render Web Service from this repository (Docker runtime).
+2. Keep default service from `render.yaml`.
+3. Upload model/data to Render disk path:
+   - `/var/data/best_leather_model_val.pth`
+   - `/var/data/dataset_train/`
+4. Set frontend repo variable:
+   - `VITE_API_BASE_URL=https://<your-render-domain>`

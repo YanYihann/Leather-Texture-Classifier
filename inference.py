@@ -10,7 +10,7 @@ import os
 
 # Load classes
 def load_class_names():
-    dataset_dir = "dataset_train"
+    dataset_dir = os.getenv("DATASET_DIR", "dataset_train")
     if os.path.isdir(dataset_dir):
         # Match class index mapping used by app_leather.py and common ImageFolder behavior.
         names = sorted(
@@ -39,7 +39,7 @@ def predict(base64_str):
     num_classes = len(class_names)
     
     model = get_model(num_classes)
-    model_path = "best_leather_model_val.pth"
+    model_path = os.getenv("MODEL_PATH", "best_leather_model_val.pth")
     
     if not os.path.exists(model_path):
         return {"error": "Model file not found"}
@@ -78,7 +78,7 @@ def predict(base64_str):
         
         # Find a reference image in dataset_train
         ref_path = None
-        class_dir = os.path.join("dataset_train", label)
+        class_dir = os.path.join(os.getenv("DATASET_DIR", "dataset_train"), label)
         if os.path.exists(class_dir):
             files = [f for f in os.listdir(class_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
             if files:

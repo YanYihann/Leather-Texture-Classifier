@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: leather-texture-classifier-api
+    runtime: docker
+    plan: starter
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MODEL_PATH
+        value: /var/data/best_leather_model_val.pth
+      - key: DATASET_DIR
+        value: /var/data/dataset_train

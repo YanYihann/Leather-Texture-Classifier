@@ -10,8 +10,10 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT || 3000);
   const pythonCommand = process.env.PYTHON_EXECUTABLE || (process.platform === "win32" ? "python" : "python3");
+  const datasetDir = process.env.DATASET_DIR || path.join(__dirname, "dataset_train");
+  const modelPath = process.env.MODEL_PATH || path.join(__dirname, "best_leather_model_val.pth");
 
   app.use(express.json({ limit: '50mb' }));
 
@@ -24,14 +26,20 @@ async function startServer() {
     }
 
     // Check if the model file exists
-    if (!fs.existsSync(path.join(__dirname, "best_leather_model_val.pth"))) {
+    if (!fs.existsSync(modelPath)) {
       return res.status(503).json({ error: "Model weights not found on server. Please upload best_leather_model_val.pth" });
     }
 
     // Call Python inference script and pass payload via stdin to avoid Windows argv length limits.
     let pythonProcess;
     try {
-      pythonProcess = spawn(pythonCommand, [path.join(__dirname, 'inference.py')]);
+      pythonProcess = spawn(pythonCommand, [path.join(__dirname, 'inference.py')], {
+        env: {
+          ...process.env,
+          MODEL_PATH: modelPath,
+          DATASET_DIR: datasetDir,
+        },
+      });
     } catch (err: any) {
       console.error(`Failed to spawn Python process with "${pythonCommand}":`, err?.message);
       return res.status(500).json({
@@ -89,7 +97,7 @@ async function startServer() {
   });
 
   // Serve reference images
-  app.use('/dataset_train', express.static(path.join(__dirname, 'dataset_train')));
+  app.use('/dataset_train', express.static(datasetDir));
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
