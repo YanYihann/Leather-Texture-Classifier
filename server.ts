@@ -69,6 +69,42 @@ async function startServer() {
     }
   });
 
+  app.delete("/api/history/:id", async (req, res) => {
+    try {
+      const id = String(req.params.id || "");
+      if (!id) {
+        return res.status(400).json({ error: "Missing history id" });
+      }
+
+      const history = await readSharedHistory();
+      const next = history.filter((item: any) => String(item?.id) !== id);
+      await writeSharedHistory(next);
+      return res.json({ ok: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to delete history item", details: err?.message || String(err) });
+    }
+  });
+
+  app.patch("/api/history/:id", async (req, res) => {
+    try {
+      const id = String(req.params.id || "");
+      const note = String(req.body?.note ?? "").trim().slice(0, 300);
+      if (!id) {
+        return res.status(400).json({ error: "Missing history id" });
+      }
+
+      const history = await readSharedHistory();
+      const next = history.map((item: any) => {
+        if (String(item?.id) !== id) return item;
+        return { ...item, note };
+      });
+      await writeSharedHistory(next);
+      return res.json({ ok: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: "Failed to update history note", details: err?.message || String(err) });
+    }
+  });
+
   // API Route for Model Inference
   app.post("/api/classify", async (req, res) => {
     const { image } = req.body; // base64 image

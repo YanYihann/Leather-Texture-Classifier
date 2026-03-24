@@ -223,6 +223,36 @@ export default function App() {
   };
   const deviceLabel = language === 'zh' ? '设备' : 'Device';
   const timeLabel = language === 'zh' ? '时间' : 'Time';
+  const noteLabel = language === 'zh' ? '备注' : 'Note';
+  const editNoteLabel = language === 'zh' ? '备注' : 'Note';
+  const deleteItemLabel = language === 'zh' ? '删除' : 'Delete';
+  const deleteItemConfirm = language === 'zh' ? '确认删除这条历史记录吗？' : 'Delete this history item?';
+
+  const deleteHistoryItem = (id: string) => {
+    if (!window.confirm(deleteItemConfirm)) return;
+    setHistory((prev) => prev.filter((item) => item.id !== id));
+    if (lastScan?.id === id) {
+      setLastScan(null);
+      setCurrentView('home');
+    }
+    void fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  };
+
+  const editHistoryNote = (id: string) => {
+    const current = history.find((item) => item.id === id)?.note || '';
+    const input = window.prompt(noteLabel, current);
+    if (input === null) return;
+    const note = input.trim().slice(0, 300);
+    setHistory((prev) => prev.map((item) => (item.id === id ? { ...item, note } : item)));
+    if (lastScan?.id === id) {
+      setLastScan((prev) => (prev ? { ...prev, note } : prev));
+    }
+    void fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note }),
+    });
+  };
 
   const startCamera = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -468,6 +498,11 @@ export default function App() {
                         <p className="font-body text-[11px] text-outline mt-1">
                           {deviceLabel}: {scan.device || 'Unknown'} | {timeLabel}: {formatToMinute(scan.timestamp)}
                         </p>
+                        {scan.note && (
+                          <p className="font-body text-[11px] text-on-surface-variant mt-1">
+                            {noteLabel}: {scan.note}
+                          </p>
+                        )}
                       </div>
                       <ChevronRight className="w-5 h-5 text-outline group-hover:text-primary transition-colors" />
                     </div>
@@ -660,9 +695,34 @@ export default function App() {
                       <p className="font-body text-[11px] text-outline mb-1">
                         {deviceLabel}: {scan.device || 'Unknown'}
                       </p>
+                      {scan.note && (
+                        <p className="font-body text-[11px] text-on-surface-variant mb-1 line-clamp-2">
+                          {noteLabel}: {scan.note}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <Verified className="w-3.5 h-3.5 text-tertiary fill-current" />
                         <span className="font-body text-xs text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            editHistoryNote(scan.id);
+                          }}
+                          className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-surface-variant transition-colors"
+                        >
+                          {editNoteLabel}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteHistoryItem(scan.id);
+                          }}
+                          className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-red-500/20 transition-colors"
+                        >
+                          {deleteItemLabel}
+                        </button>
                       </div>
                     </div>
                   </div>

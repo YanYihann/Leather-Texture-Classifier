@@ -10,6 +10,7 @@ export interface ScanResult {
   imageUrl: string;
   matches: LeatherMatch[];
   device?: string;
+  note?: string;
 }
 
 export const LEATHER_CATEGORIES = 203;
