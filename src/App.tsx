@@ -113,6 +113,7 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>('dark');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
+  const [previewImage, setPreviewImage] = useState<{ src: string; title: string } | null>(null);
   const scanVideoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -276,6 +277,27 @@ export default function App() {
         startAnalysis: 'Start Analysis',
         frameSize: 'Frame Size',
       };
+  const resultText = language === 'zh'
+    ? {
+        bestMatch: '最佳匹配',
+        aiConfidence: 'AI 置信度',
+        visualVerification: '视觉校验',
+        yourScan: '你的扫描',
+        reference: '参考样本',
+        top3Similar: 'Top 3 相似匹配',
+        noReference: '暂无参考图',
+        tapToZoom: '点击查看高清',
+      }
+    : {
+        bestMatch: 'Best Match',
+        aiConfidence: 'AI Confidence',
+        visualVerification: 'Visual Verification',
+        yourScan: 'Your Scan',
+        reference: 'Reference',
+        top3Similar: 'Top 3 Similar Matches',
+        noReference: 'No Reference Image',
+        tapToZoom: 'Tap to view HD',
+      };
   const scaledWidth = SCAN_FRAME.widthPct * frameScale;
   const scaledHeight = SCAN_FRAME.heightPct * frameScale;
   const frameWidthPct = Math.min(0.9, Math.max(0.2, scaledWidth));
@@ -286,6 +308,8 @@ export default function App() {
     widthPct: frameWidthPct,
     heightPct: frameHeightPct,
   };
+  const bestMatch = lastScan?.matches?.[0] ?? null;
+  const similarMatches = lastScan?.matches?.slice(0, 3) ?? [];
 
   const deleteHistoryItem = (id: string) => {
     if (!window.confirm(deleteItemConfirm)) return;
@@ -488,6 +512,10 @@ export default function App() {
       await analyzeImage(base64);
     };
     reader.readAsDataURL(file);
+  };
+
+  const getMatchReferenceUrl = (match: any) => {
+    return match?.referenceUrl || '';
   };
 
   return (
@@ -784,64 +812,109 @@ export default function App() {
                 <div className="w-10" />
               </div>
 
-              <div className="rounded-2xl overflow-hidden aspect-square bg-surface-container-low shadow-xl relative">
-                {isScanning && (
-                  <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
+              <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-6 relative overflow-hidden">
+                <div className="absolute -right-20 -bottom-24 w-72 h-72 rounded-full border-[18px] border-primary/10 pointer-events-none" />
+                {isScanning ? (
+                  <div className="min-h-48 flex flex-col items-center justify-center gap-4">
                     <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                    <p className="font-headline font-bold text-primary">{text.analyzing}</p>
+                    <p className="headline-sm text-primary">{text.analyzing}</p>
                   </div>
-                )}
-                {lastScan && (
-                  <img 
-                    src={lastScan.imageUrl} 
-                    alt="Scanned" 
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                )}
+                ) : bestMatch ? (
+                  <>
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="label-sm px-4 py-2 rounded-full bg-tertiary text-on-tertiary">{resultText.bestMatch}</span>
+                      <div className="text-right">
+                        <p className="label-sm text-outline">{resultText.aiConfidence}</p>
+                        <p className="headline-sm text-primary mt-1">{bestMatch.confidence}%</p>
+                      </div>
+                    </div>
+                    <h3 className="headline-sm mt-8 tracking-tight break-words">{bestMatch.label}</h3>
+                  </>
+                ) : null}
               </div>
 
-              {lastScan && !isScanning && (
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <p className="label-sm text-outline">{text.topMatches}</p>
-                    <div className="space-y-4">
-                      {lastScan.matches.map((match, idx) => (
-                        <div key={idx} className="bg-surface-container-low p-4 rounded-xl space-y-3">
-                          <div className="flex gap-4">
-                            {match.referenceUrl && (
-                              <div className="w-16 h-16 rounded-lg overflow-hidden bg-surface-container-lowest flex-shrink-0">
-                                <img 
-                                  src={match.referenceUrl} 
-                                  alt="Reference" 
-                                  className="w-full h-full object-cover"
-                                  referrerPolicy="no-referrer"
-                                />
-                              </div>
-                            )}
-                            <div className="flex-grow">
-                              <div className={`flex justify-between mb-1 gap-3 ${idx === 0 ? 'items-start' : 'items-center'}`}>
-                                <h4 className={`${idx === 0 ? 'display-lg' : 'headline-sm'} tracking-tight break-words`}>{match.label}</h4>
-                                <span className="body-md font-semibold text-primary">{match.confidence}%</span>
-                              </div>
-                              <div className="h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-                                <motion.div 
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${match.confidence}%` }}
-                                  transition={{ duration: 1, delay: idx * 0.2 }}
-                                  className="h-full bg-primary"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          {match.description && (
-                            <p className="body-md text-on-surface-variant leading-relaxed">{match.description}</p>
+              {!isScanning && lastScan && (
+              <section className="space-y-3">
+                <h3 className="headline-sm mt-4">{resultText.visualVerification}</h3>
+                <div className="grid grid-cols-2 gap-3 bg-surface-container-low border border-outline-variant/20 rounded-2xl p-3">
+                  <button
+                    onClick={() => lastScan?.imageUrl && setPreviewImage({ src: lastScan.imageUrl, title: resultText.yourScan })}
+                    className="rounded-xl overflow-hidden bg-surface-container-high relative group"
+                  >
+                    {lastScan?.imageUrl ? (
+                      <img src={lastScan.imageUrl} alt={resultText.yourScan} className="w-full h-36 object-cover group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-full h-36 flex items-center justify-center body-md text-outline">{resultText.noReference}</div>
+                    )}
+                    <span className="label-sm absolute bottom-2 left-2 px-3 py-1 rounded-md bg-black/50 text-on-background">{resultText.yourScan}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const ref = bestMatch ? getMatchReferenceUrl(bestMatch as any) : '';
+                      if (ref) setPreviewImage({ src: ref, title: resultText.reference });
+                    }}
+                    className="rounded-xl overflow-hidden bg-surface-container-high relative group"
+                  >
+                    {bestMatch && getMatchReferenceUrl(bestMatch as any) ? (
+                      <img src={getMatchReferenceUrl(bestMatch as any)} alt={resultText.reference} className="w-full h-36 object-cover group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-full h-36 flex items-center justify-center body-md text-outline">{resultText.noReference}</div>
+                    )}
+                    <span className="label-sm absolute bottom-2 left-2 px-3 py-1 rounded-md bg-black/50 text-on-background">{resultText.reference}</span>
+                  </button>
+                </div>
+                <p className="label-sm text-outline">{resultText.tapToZoom}</p>
+              </section>
+              )}
+
+              {!isScanning && lastScan && (
+              <section className="space-y-3">
+                <h3 className="headline-sm mt-4">{resultText.top3Similar}</h3>
+                <div className="space-y-3">
+                  {similarMatches.map((match, idx) => (
+                    <div key={idx} className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15">
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => {
+                            const ref = getMatchReferenceUrl(match as any);
+                            if (ref) setPreviewImage({ src: ref, title: match.label });
+                          }}
+                          className="w-24 h-24 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0"
+                        >
+                          {getMatchReferenceUrl(match as any) ? (
+                            <img
+                              src={getMatchReferenceUrl(match as any)}
+                              alt={match.label}
+                              className="w-full h-full object-cover hover:scale-105 transition-transform"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center body-md text-outline">{resultText.noReference}</div>
                           )}
+                        </button>
+                        <div className="flex-grow">
+                          <div className="flex justify-between items-center mb-2 gap-3">
+                            <h4 className="headline-sm tracking-tight break-words">{match.label}</h4>
+                            <span className="body-md font-semibold text-primary">{match.confidence}%</span>
+                          </div>
+                          <div className="h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${match.confidence}%` }}
+                              transition={{ duration: 1, delay: idx * 0.2 }}
+                              className="h-full bg-primary"
+                            />
+                          </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
-                  
+                  ))}
+                </div>
+              </section>
+              )}
+
+              {!isScanning && lastScan && (
+                <div className="space-y-6">
                   <button 
                     onClick={() => setCurrentView('home')}
                     className="w-full py-4 rounded-lg bg-surface-container-high font-headline font-bold text-on-surface hover:bg-surface-variant transition-colors"
@@ -998,6 +1071,44 @@ export default function App() {
           />
         </div>
       </nav>
+
+      <AnimatePresence>
+        {previewImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setPreviewImage(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="max-w-5xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="headline-sm">{previewImage.title}</p>
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="p-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="rounded-2xl overflow-hidden border border-outline-variant/20 bg-surface-container-low">
+                <img
+                  src={previewImage.src}
+                  alt={previewImage.title}
+                  className="w-full max-h-[80vh] object-contain"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
