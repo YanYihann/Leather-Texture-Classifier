@@ -1,0 +1,16 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# ML artifacts (keep local, do not push to GitHub)
+dataset_train/
+dataset_val/
+best_leather_model*.pth
+*.pt
+__pycache__/
+*.pyc

@@ -1,0 +1,7 @@
+{
+  "name": "Digital Artisan",
+  "description": "Professional AI-powered leather texture classification system for identifying 200+ material categories with high precision.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
