@@ -587,7 +587,7 @@ export default function App() {
                   onClick={openScanWorkspace}
                   className="w-full py-4 rounded-lg bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-bold text-lg shadow-xl shadow-black/20 flex items-center justify-center gap-4 active:scale-[0.98] transition-all"
                 >
-                  <Camera className="w-8 h-8 fill-current" />
+                  <Camera className="w-8 h-8" />
                   {text.scanLeather}
                 </button>
                 <label className="w-full py-4 rounded-lg bg-surface-container-high border border-outline-variant/20 text-on-surface font-headline font-bold text-lg flex items-center justify-center gap-4 hover:bg-surface-variant transition-colors active:scale-[0.98] cursor-pointer">
