@@ -744,10 +744,11 @@ export default function App() {
                         )}
                       </div>
                       <div className="flex-grow">
-                        <h4 className="font-headline font-bold text-sm">{scan.matches[0].label}</h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Verified className="w-3.5 h-3.5 text-tertiary fill-current" />
-                          <span className="body-md text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-headline font-bold text-sm">{scan.matches[0].label}</h4>
+                          <span className="label-sm px-2.5 py-1 rounded-md bg-tertiary/90 text-on-tertiary">
+                            {scan.matches[0].confidence}%
+                          </span>
                         </div>
                         <p className="body-md text-outline mt-1">
                           {deviceLabel}: {scan.device || 'Unknown'} | {timeLabel}: {formatToMinute(scan.timestamp)}
