@@ -104,6 +104,7 @@ export default function App() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [language, setLanguage] = useState<Language>('zh');
   const [theme, setTheme] = useState<Theme>('dark');
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -143,6 +144,11 @@ export default function App() {
 
   useEffect(() => {
     persistHistorySafely(history);
+  }, [history]);
+
+  useEffect(() => {
+    const validIds = new Set(history.map((item) => item.id));
+    setSelectedHistoryIds((prev) => prev.filter((id) => validIds.has(id)));
   }, [history]);
 
   useEffect(() => {
@@ -227,15 +233,43 @@ export default function App() {
   const editNoteLabel = language === 'zh' ? '备注' : 'Note';
   const deleteItemLabel = language === 'zh' ? '删除' : 'Delete';
   const deleteItemConfirm = language === 'zh' ? '确认删除这条历史记录吗？' : 'Delete this history item?';
+  const selectAllLabel = language === 'zh' ? '全选' : 'Select All';
+  const clearSelectLabel = language === 'zh' ? '取消全选' : 'Clear';
+  const deleteSelectedLabel = language === 'zh' ? '删除已选' : 'Delete Selected';
+  const deleteSelectedConfirm = language === 'zh' ? '确认删除已选历史记录吗？' : 'Delete selected history items?';
 
   const deleteHistoryItem = (id: string) => {
     if (!window.confirm(deleteItemConfirm)) return;
     setHistory((prev) => prev.filter((item) => item.id !== id));
+    setSelectedHistoryIds((prev) => prev.filter((v) => v !== id));
     if (lastScan?.id === id) {
       setLastScan(null);
       setCurrentView('home');
     }
     void fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  };
+
+  const toggleHistorySelection = (id: string) => {
+    setSelectedHistoryIds((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
+  };
+
+  const toggleSelectAllHistory = () => {
+    setSelectedHistoryIds((prev) => (prev.length === history.length ? [] : history.map((item) => item.id)));
+  };
+
+  const deleteSelectedHistory = () => {
+    if (!selectedHistoryIds.length) return;
+    if (!window.confirm(deleteSelectedConfirm)) return;
+    const idSet = new Set(selectedHistoryIds);
+    setHistory((prev) => prev.filter((item) => !idSet.has(item.id)));
+    if (lastScan && idSet.has(lastScan.id)) {
+      setLastScan(null);
+      setCurrentView('home');
+    }
+    for (const id of selectedHistoryIds) {
+      void fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    }
+    setSelectedHistoryIds([]);
   };
 
   const editHistoryNote = (id: string) => {
@@ -664,12 +698,28 @@ export default function App() {
                     if (!history.length) return;
                     if (!window.confirm(text.clearConfirm)) return;
                     setHistory([]);
+                    setSelectedHistoryIds([]);
                     localStorage.removeItem(HISTORY_STORAGE_KEY);
                     void fetch(historyEndpoint, { method: 'DELETE' });
                   }}
                   className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors font-label uppercase tracking-wider text-on-surface-variant"
                 >
                   {text.clearHistory}
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleSelectAllHistory}
+                  className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors"
+                >
+                  {selectedHistoryIds.length === history.length && history.length > 0 ? clearSelectLabel : selectAllLabel}
+                </button>
+                <button
+                  onClick={deleteSelectedHistory}
+                  disabled={!selectedHistoryIds.length}
+                  className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleteSelectedLabel} ({selectedHistoryIds.length})
                 </button>
               </div>
               
@@ -705,6 +755,17 @@ export default function App() {
                         <span className="font-body text-xs text-on-surface-variant">{scan.matches[0].confidence}% {text.confidence}</span>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedHistoryIds.includes(scan.id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            toggleHistorySelection(scan.id);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 accent-primary"
+                          title={deleteSelectedLabel}
+                        />
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
