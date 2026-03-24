@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play } from 'lucide-react';
+import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play, ScanLine, ImageUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScanResult, MOCK_SCANS, LEATHER_CATEGORIES, AVG_PRECISION } from './types';
 import { classifyLeather } from './services/gemini';
@@ -587,11 +587,15 @@ export default function App() {
                   onClick={openScanWorkspace}
                   className="w-full py-4 rounded-lg bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-bold text-lg shadow-xl shadow-black/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                 >
-                  <Camera className="w-5 h-5 fill-current" />
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-on-primary/10 ring-1 ring-on-primary/20">
+                    <ScanLine className="w-5 h-5" />
+                  </span>
                   {text.scanLeather}
                 </button>
                 <label className="w-full py-4 rounded-lg bg-surface-container-high border border-outline-variant/20 text-on-surface font-headline font-bold text-lg flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors active:scale-[0.98] cursor-pointer">
-                  <Upload className="w-5 h-5" />
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-surface-container-highest/70 ring-1 ring-outline-variant/50">
+                    <ImageUp className="w-5 h-5" />
+                  </span>
                   {text.uploadGallery}
                   <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
                 </label>
