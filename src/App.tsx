@@ -297,17 +297,17 @@ export default function App() {
     profileStatus: '使用本地历史模式',
     editProfile: '编辑资料',
     performanceAnalytics: '性能分析',
-    totalScansCard: 'TOTAL SCANS',
-    avgConfCard: 'AVG. CONF.',
-    thisWeekCard: 'THIS WEEK',
-    lastScanCard: 'LAST SCAN',
+    totalScansCard: '总识别次数',
+    avgConfCard: '平均置信度',
+    thisWeekCard: '本周识别',
+    lastScanCard: '最近识别',
     appPreferences: '应用偏好',
-    prefTheme: 'Theme',
-    prefLanguage: 'Language',
-    prefSort: 'Default Sort',
-    prefAutoSave: 'Auto-save History',
-    prefHdPreview: 'HD Preview',
-    prefHaptic: 'Haptic Feedback',
+    prefTheme: '主题',
+    prefLanguage: '语言',
+    prefSort: '默认排序',
+    prefAutoSave: '自动保存历史',
+    prefHdPreview: '高清预览',
+    prefHaptic: '震动反馈',
     sortNewest: '最新优先',
     sortConfidence: '置信度优先',
     sortName: '名称优先',
@@ -320,37 +320,49 @@ export default function App() {
     profileRole: '高级检验员',
     serverMode: '服务器模式',
     localMode: '本地模式',
+    serverModeShort: '服务器',
+    localModeShort: '本地',
     favorites: '收藏',
     noRecordsYet: '暂无记录',
+    mobile: '移动端',
+    desktop: '桌面端',
+    denied: '已拒绝',
+    prompt: '待授权',
+    unknown: '未知',
+    deployLocal: '本地',
+    deployTunnel: '隧道',
+    deployRender: 'Render',
+    deployGithubPages: 'GitHub Pages',
+    privacyPolicy: '隐私政策与服务条款',
     infraSync: '基础设施与同步',
-    historyMode: 'History Mode',
-    connection: 'Connection',
-    backendUrl: 'Backend URL',
-    syncStatus: 'Sync Status',
-    upToDate: 'Up to date',
-    connected: 'Connected',
-    offline: 'Offline',
+    historyMode: '历史模式',
+    connection: '连接状态',
+    backendUrl: '后端地址',
+    syncStatus: '同步状态',
+    upToDate: '已同步',
+    connected: '已连接',
+    offline: '离线',
     dataManagement: '数据管理',
     exportHistory: '导出历史 (.json)',
     syncToServer: '同步到服务器',
     clearLocalCache: '清理本地缓存',
     preferencesProfile: '识别偏好',
-    mostIdentified: 'Most Identified',
-    highConfidenceRate: 'High Confidence Rate',
+    mostIdentified: '最常识别',
+    highConfidenceRate: '高置信度占比',
     recentSummaries: '最近 3 条识别摘要',
     environment: '环境',
-    device: 'Device',
-    cameraGallery: 'Camera/Gallery',
-    deployment: 'Deployment',
-    authorized: 'Authorized',
+    device: '设备',
+    cameraGallery: '相机/相册',
+    deployment: '部署环境',
+    authorized: '已授权',
     security: '安全',
-    sessionActive: 'Session Active',
-    twoFaEnabled: '2FA Enabled',
-    teamAccess: 'Team Access',
+    sessionActive: '会话正常',
+    twoFaEnabled: '已启用 2FA',
+    teamAccess: '团队访问',
     aboutApp: '关于应用',
-    appVersion: 'App Version',
-    modelVersion: 'Model Version',
-    buildNumber: 'Build',
+    appVersion: '应用版本',
+    modelVersion: '模型版本',
+    buildNumber: '构建号',
     logout: '退出登录',
   } : {
     appName: 'LeatherMind',
@@ -410,8 +422,20 @@ export default function App() {
     profileRole: 'Senior Inspector',
     serverMode: 'Server Mode',
     localMode: 'Local Mode',
+    serverModeShort: 'Server',
+    localModeShort: 'Local',
     favorites: 'Favorites',
     noRecordsYet: 'No records yet.',
+    mobile: 'Mobile',
+    desktop: 'Desktop',
+    denied: 'Denied',
+    prompt: 'Prompt',
+    unknown: 'Unknown',
+    deployLocal: 'Local',
+    deployTunnel: 'Tunnel',
+    deployRender: 'Render',
+    deployGithubPages: 'GitHub Pages',
+    privacyPolicy: 'Privacy Policy & EULA',
     infraSync: 'INFRASTRUCTURE & SYNC',
     historyMode: 'History Mode',
     connection: 'Connection',
@@ -568,22 +592,22 @@ export default function App() {
     : 0;
   const deploymentLabel = (() => {
     const host = typeof window !== 'undefined' ? window.location.hostname : '';
-    if (!host) return 'Unknown';
-    if (host.includes('localhost') || host === '127.0.0.1') return 'Local';
-    if (host.includes('trycloudflare.com') || host.includes('yanyihan.top')) return 'Tunnel';
-    if (host.includes('onrender.com')) return 'Render';
-    if (host.includes('github.io')) return 'GitHub Pages';
+    if (!host) return text.unknown;
+    if (host.includes('localhost') || host === '127.0.0.1') return text.deployLocal;
+    if (host.includes('trycloudflare.com') || host.includes('yanyihan.top')) return text.deployTunnel;
+    if (host.includes('onrender.com')) return text.deployRender;
+    if (host.includes('github.io')) return text.deployGithubPages;
     return host;
   })();
-  const currentDevice = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '') ? 'Mobile' : 'Desktop';
+  const currentDevice = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '') ? text.mobile : text.desktop;
   const cameraPermissionLabel =
     cameraPermissionState === 'authorized'
       ? text.authorized
       : cameraPermissionState === 'denied'
-      ? 'Denied'
+      ? text.denied
       : cameraPermissionState === 'prompt'
-      ? 'Prompt'
-      : 'Unknown';
+      ? text.prompt
+      : text.unknown;
   const stage1Done = analysisProgress >= 36;
   const stage2Done = analysisProgress >= 72;
   const stage3Done = analysisProgress >= 96;
@@ -1637,7 +1661,7 @@ export default function App() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="label-sm text-outline">{text.historyMode}</p>
-                      <p className="body-md font-semibold">{historySyncMode === 'server' ? 'Server' : 'Local'}</p>
+                      <p className="body-md font-semibold">{historySyncMode === 'server' ? text.serverModeShort : text.localModeShort}</p>
                     </div>
                     <div>
                       <p className="label-sm text-outline">{text.connection}</p>
@@ -1699,7 +1723,7 @@ export default function App() {
                 <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="body-md text-on-surface-variant">{text.device}</p>
-                    <p className="body-md flex items-center gap-1">{currentDevice === 'Mobile' ? <Smartphone className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}{currentDevice}</p>
+                    <p className="body-md flex items-center gap-1">{/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '') ? <Smartphone className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}{currentDevice}</p>
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="body-md text-on-surface-variant">{text.cameraGallery}</p>
@@ -1732,7 +1756,7 @@ export default function App() {
                   <p className="body-md">{text.appVersion}: v2.1.0</p>
                   <p className="body-md">{text.modelVersion}: v4.2</p>
                   <p className="body-md">{text.buildNumber}: 2026.03.25</p>
-                  <p className="body-md text-outline flex items-center gap-1"><Info className="w-4 h-4" /> Privacy Policy & EULA</p>
+                  <p className="body-md text-outline flex items-center gap-1"><Info className="w-4 h-4" /> {text.privacyPolicy}</p>
                 </div>
                 <button className="w-full py-4 rounded-2xl bg-[#E9A79F] text-[#351d16] label-sm hover:brightness-95 transition-all flex items-center justify-center gap-2">
                   <LogOut className="w-4 h-4" />
