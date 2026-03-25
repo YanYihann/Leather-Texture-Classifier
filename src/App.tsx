@@ -706,7 +706,7 @@ export default function App() {
               {/* Hero */}
               <section className="relative overflow-hidden rounded-xl aspect-[4/5] md:aspect-video bg-surface-container-low shadow-2xl">
                 <img 
-                  src="/images/hero.png" 
+                  src="/images/home.png" 
                   alt="Leather Texture" 
                   className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-luminosity"
                   referrerPolicy="no-referrer"
