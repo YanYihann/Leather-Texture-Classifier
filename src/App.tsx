@@ -143,7 +143,7 @@ export default function App() {
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
   const [historySyncMode, setHistorySyncMode] = useState<'server' | 'local'>('local');
   const [historySearch, setHistorySearch] = useState('');
-  const [defaultSort, setDefaultSort] = useState<'newest' | 'confidence'>('newest');
+  const [defaultSort, setDefaultSort] = useState<'newest' | 'confidence' | 'name'>('newest');
   const [autoSaveHistory, setAutoSaveHistory] = useState(true);
   const [hdPreviewEnabled, setHdPreviewEnabled] = useState(true);
   const [hapticFeedbackEnabled, setHapticFeedbackEnabled] = useState(false);
@@ -214,7 +214,7 @@ export default function App() {
     if (savedPrefs) {
       try {
         const prefs = JSON.parse(savedPrefs);
-        if (prefs.defaultSort === 'newest' || prefs.defaultSort === 'confidence') setDefaultSort(prefs.defaultSort);
+        if (prefs.defaultSort === 'newest' || prefs.defaultSort === 'confidence' || prefs.defaultSort === 'name') setDefaultSort(prefs.defaultSort);
         if (typeof prefs.autoSaveHistory === 'boolean') setAutoSaveHistory(prefs.autoSaveHistory);
         if (typeof prefs.hdPreviewEnabled === 'boolean') setHdPreviewEnabled(prefs.hdPreviewEnabled);
         if (typeof prefs.hapticFeedbackEnabled === 'boolean') setHapticFeedbackEnabled(prefs.hapticFeedbackEnabled);
@@ -310,6 +310,18 @@ export default function App() {
     prefHaptic: 'Haptic Feedback',
     sortNewest: '最新优先',
     sortConfidence: '置信度优先',
+    sortName: '名称优先',
+    themeDark: '深色',
+    themeLight: '浅色',
+    langZh: '中文',
+    langEn: 'English',
+    profileUserName: 'Marcus Thorne',
+    profileUserEmail: 'm.thorne@leathermind.ai',
+    profileRole: '高级检验员',
+    serverMode: '服务器模式',
+    localMode: '本地模式',
+    favorites: '收藏',
+    noRecordsYet: '暂无记录',
     infraSync: '基础设施与同步',
     historyMode: 'History Mode',
     connection: 'Connection',
@@ -388,6 +400,18 @@ export default function App() {
     prefHaptic: 'Haptic Feedback',
     sortNewest: 'Newest First',
     sortConfidence: 'Confidence First',
+    sortName: 'Name First',
+    themeDark: 'Dark',
+    themeLight: 'Light',
+    langZh: '中文',
+    langEn: 'English',
+    profileUserName: 'Marcus Thorne',
+    profileUserEmail: 'm.thorne@leathermind.ai',
+    profileRole: 'Senior Inspector',
+    serverMode: 'Server Mode',
+    localMode: 'Local Mode',
+    favorites: 'Favorites',
+    noRecordsYet: 'No records yet.',
     infraSync: 'INFRASTRUCTURE & SYNC',
     historyMode: 'History Mode',
     connection: 'Connection',
@@ -513,7 +537,15 @@ export default function App() {
   };
   const bestMatch = lastScan?.matches?.[0] ?? null;
   const similarMatches = lastScan?.matches?.slice(0, 3) ?? [];
-  const filteredHistory = history.filter(matchesHistorySearch);
+  const filteredHistory = [...history.filter(matchesHistorySearch)].sort((a, b) => {
+    if (defaultSort === 'confidence') {
+      return (b.matches?.[0]?.confidence || 0) - (a.matches?.[0]?.confidence || 0);
+    }
+    if (defaultSort === 'name') {
+      return (a.matches?.[0]?.label || '').localeCompare(b.matches?.[0]?.label || '');
+    }
+    return b.timestamp - a.timestamp;
+  });
   const filteredHistoryIds = filteredHistory.map((item) => item.id);
   const allVisibleSelected = filteredHistoryIds.length > 0 && filteredHistoryIds.every((id) => selectedHistoryIds.includes(id));
   const avgAccuracy = history.length
@@ -1507,7 +1539,6 @@ export default function App() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-primary">
                   <Menu className="w-5 h-5" />
-                  <h2 className="headline-sm mt-0">Leather Intelligence</h2>
                 </div>
                 <button className="p-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors">
                   <Bell className="w-5 h-5" />
@@ -1520,11 +1551,11 @@ export default function App() {
                     <img src="/images/avatar.svg" alt="Profile Avatar" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-grow">
-                    <h3 className="font-headline font-bold text-2xl leading-tight">Marcus Thorne</h3>
-                    <p className="body-md text-on-surface-variant">m.thorne@leathermind.ai</p>
+                    <h3 className="font-headline font-bold text-2xl leading-tight">{text.profileUserName}</h3>
+                    <p className="body-md text-on-surface-variant">{text.profileUserEmail}</p>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="label-sm px-2 py-1 rounded-md bg-primary/20 text-primary">Senior Inspector</span>
-                      <span className="label-sm px-2 py-1 rounded-md bg-tertiary/20 text-tertiary">{historySyncMode === 'server' ? 'Server Mode' : 'Local Mode'}</span>
+                      <span className="label-sm px-2 py-1 rounded-md bg-primary/20 text-primary">{text.profileRole}</span>
+                      <span className="label-sm px-2 py-1 rounded-md bg-tertiary/20 text-tertiary">{historySyncMode === 'server' ? text.serverMode : text.localMode}</span>
                     </div>
                   </div>
                 </div>
@@ -1566,9 +1597,34 @@ export default function App() {
               <section className="space-y-3">
                 <p className="label-sm text-outline">{text.appPreferences}</p>
                 <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 divide-y divide-outline-variant/20">
-                  <PreferenceRow label={text.prefTheme} value={theme === 'dark' ? 'Dark' : 'Light'} />
-                  <PreferenceRow label={text.prefLanguage} value={language === 'zh' ? '中文' : 'English (US)'} />
-                  <PreferenceRow label={text.prefSort} value={defaultSort === 'newest' ? text.sortNewest : text.sortConfidence} />
+                  <ChoiceRow
+                    label={text.prefTheme}
+                    options={[
+                      { key: 'dark', label: text.themeDark },
+                      { key: 'light', label: text.themeLight },
+                    ]}
+                    activeKey={theme}
+                    onSelect={(key) => setTheme(key as Theme)}
+                  />
+                  <ChoiceRow
+                    label={text.prefLanguage}
+                    options={[
+                      { key: 'zh', label: text.langZh },
+                      { key: 'en', label: text.langEn },
+                    ]}
+                    activeKey={language}
+                    onSelect={(key) => setLanguage(key as Language)}
+                  />
+                  <ChoiceRow
+                    label={text.prefSort}
+                    options={[
+                      { key: 'newest', label: text.sortNewest },
+                      { key: 'confidence', label: text.sortConfidence },
+                      { key: 'name', label: text.sortName },
+                    ]}
+                    activeKey={defaultSort}
+                    onSelect={(key) => setDefaultSort(key as 'newest' | 'confidence' | 'name')}
+                  />
                   <ToggleRow label={text.prefAutoSave} enabled={autoSaveHistory} onToggle={() => setAutoSaveHistory((v) => !v)} />
                   <ToggleRow label={text.prefHdPreview} enabled={hdPreviewEnabled} onToggle={() => setHdPreviewEnabled((v) => !v)} />
                   <ToggleRow label={text.prefHaptic} enabled={hapticFeedbackEnabled} onToggle={() => setHapticFeedbackEnabled((v) => !v)} />
@@ -1624,16 +1680,16 @@ export default function App() {
                   <div className="flex flex-wrap gap-2">
                     <span className="label-sm px-2 py-1 rounded-md bg-primary/15 text-primary">{mostIdentifiedLabel}</span>
                     <span className="label-sm px-2 py-1 rounded-md bg-tertiary/15 text-tertiary">{text.highConfidenceRate}: {highConfidenceRate}%</span>
-                    <span className="label-sm px-2 py-1 rounded-md bg-surface-container-high text-on-surface-variant">Favorites: 0</span>
+                    <span className="label-sm px-2 py-1 rounded-md bg-surface-container-high text-on-surface-variant">{text.favorites}: 0</span>
                   </div>
                   <div className="space-y-2">
                     <p className="label-sm text-outline">{text.recentSummaries}</p>
                     {history.slice(0, 3).map((item) => (
                       <div key={item.id} className="rounded-lg bg-surface-container-high p-2">
-                        <p className="body-md line-clamp-1">{item.matches?.[0]?.label || 'Unknown'} • {item.matches?.[0]?.confidence || 0}%</p>
+                        <p className="body-md line-clamp-1">{item.matches?.[0]?.label || 'Unknown'} - {item.matches?.[0]?.confidence || 0}%</p>
                       </div>
                     ))}
-                    {!history.length && <p className="body-md text-outline">No records yet.</p>}
+                    {!history.length && <p className="body-md text-outline">{text.noRecordsYet}</p>}
                   </div>
                 </div>
               </section>
@@ -1773,11 +1829,35 @@ function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: (
   );
 }
 
-function PreferenceRow({ label, value }: { label: string; value: string }) {
+function ChoiceRow({
+  label,
+  options,
+  activeKey,
+  onSelect,
+}: {
+  label: string;
+  options: Array<{ key: string; label: string }>;
+  activeKey: string;
+  onSelect: (key: string) => void;
+}) {
   return (
-    <div className="flex items-center justify-between p-4">
+    <div className="p-4 space-y-2">
       <p className="body-md">{label}</p>
-      <p className="body-md text-primary">{value}</p>
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => onSelect(opt.key)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              activeKey === opt.key
+                ? 'bg-primary text-on-primary'
+                : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
