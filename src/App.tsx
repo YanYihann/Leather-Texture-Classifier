@@ -1227,36 +1227,34 @@ export default function App() {
                   <div 
                     key={scan.id}
                     onClick={() => { setLastScan(scan); setCurrentView('result'); }}
-                    className="relative flex items-center gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high transition-colors cursor-pointer"
+                    className="relative flex items-center gap-3 p-3 bg-surface-container rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high transition-colors cursor-pointer"
                   >
-                    <span className="absolute top-2.5 right-2.5 label-sm px-3.5 py-1.5 rounded-lg bg-tertiary/95 text-on-tertiary text-sm">
+                    <span className="absolute top-2.5 right-2.5 label-sm px-2.5 py-1 rounded-lg bg-tertiary/95 text-on-tertiary text-xs">
                       {scan.matches[0].confidence}%
                     </span>
-                    <div className="w-28 h-28 rounded-xl overflow-hidden flex-shrink-0">
+                    <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
                       {getPreviewUrl(scan) ? (
                         <img src={getPreviewUrl(scan)} alt={scan.matches[0].label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-full h-full bg-surface-container-highest" />
                       )}
                     </div>
-                    <div className="flex-grow min-w-0 min-h-28 flex flex-col justify-center pt-3 pr-28 pb-10 relative">
-                      <h4 className="font-headline font-bold text-xl leading-tight pr-24">{scan.matches[0].label}</h4>
-                      <div className="mt-2.5 space-y-1">
-                        <p className="text-base text-outline flex items-center gap-2">
-                          <CalendarDays className="w-4 h-4" />
+                    <div className="flex-grow min-w-0 min-h-24 flex flex-col justify-center pr-24 pb-8 relative">
+                      <h4 className="font-headline font-bold text-lg leading-tight pr-10 line-clamp-1">{scan.matches[0].label}</h4>
+                      <div className="mt-1.5">
+                        <p className="text-sm text-outline flex items-center gap-2">
+                          <CalendarDays className="w-3.5 h-3.5" />
                           {formatHistoryDate(scan.timestamp)}
-                        </p>
-                        <p className="text-base text-outline flex items-center gap-2">
-                          <Clock3 className="w-4 h-4" />
+                          <Clock3 className="w-3.5 h-3.5 ml-2" />
                           {formatHistoryTime(scan.timestamp)}
                         </p>
                       </div>
                       {scan.note && (
-                        <p className="body-md text-on-surface-variant mt-2 line-clamp-2">
+                        <p className="text-xs text-on-surface-variant mt-1.5 line-clamp-1">
                           {noteLabel}: {scan.note}
                         </p>
                       )}
-                      <div className="absolute right-0 bottom-0 flex items-center justify-end gap-2 pr-0">
+                      <div className="absolute right-0 bottom-0 flex items-center justify-end gap-1.5 pr-0">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1291,7 +1289,7 @@ export default function App() {
                           </button>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-outline self-center ml-1" />
+                    <ChevronRight className="w-4 h-4 text-outline self-center ml-0.5" />
                   </div>
                 ))}
               </div>
