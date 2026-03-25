@@ -1239,14 +1239,14 @@ export default function App() {
                         <div className="w-full h-full bg-surface-container-highest" />
                       )}
                     </div>
-                    <div className="flex-grow min-w-0 flex flex-col justify-center">
-                      <h4 className="font-headline font-bold text-2xl leading-tight pr-24">{scan.matches[0].label}</h4>
-                      <div className="mt-2 space-y-1.5">
-                        <p className="text-lg text-outline flex items-center gap-2">
+                    <div className="flex-grow min-w-0 h-28 flex flex-col justify-center">
+                      <h4 className="font-headline font-bold text-xl leading-tight pr-24">{scan.matches[0].label}</h4>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-base text-outline flex items-center gap-2">
                           <CalendarDays className="w-4 h-4" />
                           {formatHistoryDate(scan.timestamp)}
                         </p>
-                        <p className="text-lg text-outline flex items-center gap-2">
+                        <p className="text-base text-outline flex items-center gap-2">
                           <Clock3 className="w-4 h-4" />
                           {formatHistoryTime(scan.timestamp)}
                         </p>
@@ -1256,7 +1256,7 @@ export default function App() {
                           {noteLabel}: {scan.note}
                         </p>
                       )}
-                      <div className="mt-4 flex items-center justify-end gap-2 pr-1">
+                      <div className="mt-4 flex items-center justify-end gap-2 pr-0.5">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
