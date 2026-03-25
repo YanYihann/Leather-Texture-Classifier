@@ -1241,11 +1241,13 @@ export default function App() {
                     </div>
                     <div className="flex-grow min-w-0 min-h-24 flex flex-col justify-center pr-24 pb-8 relative">
                       <h4 className="font-headline font-bold text-lg leading-tight pr-10 line-clamp-1">{scan.matches[0].label}</h4>
-                      <div className="mt-1.5">
+                      <div className="mt-1.5 space-y-1">
                         <p className="text-sm text-outline flex items-center gap-2 whitespace-nowrap">
-                          <CalendarDays className="w-3.5 h-3.5" />
+                          <CalendarDays className="w-4 h-4" />
                           {formatHistoryDate(scan.timestamp)}
-                          <Clock3 className="w-3.5 h-3.5 ml-2" />
+                        </p>
+                        <p className="text-sm text-outline flex items-center gap-2 whitespace-nowrap">
+                          <Clock3 className="w-4 h-4" />
                           {formatHistoryTime(scan.timestamp)}
                         </p>
                       </div>
