@@ -668,7 +668,7 @@ export default function App() {
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/20">
             <img 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO6xLHQxByw5xmxG8LrFcxDxEUGPDLVAiK204o6hQjJ6_XkhVxRu_2fPtgZ5Jvw9ie8vqIOzlcuL7nLPfgQDr5EfZu9aoKAUKCvO2KjLSfKI8gepVtNG8bqepO61FajgLkymPzeNfWEU8tQb8jXFdEt1q2fI-kePq-Ww3717UNQN9BvJuov9oPYjbEzyO4_a9kJs8PPBWyTL01ebnR1yEzO7_3ivxF2dUGIXM7gwbZ9FOS27rTRC_21W8XU7rv1pKahn3U4rELvuU" 
+              src="/images/avatar.svg" 
               alt="Avatar" 
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
@@ -706,7 +706,7 @@ export default function App() {
               {/* Hero */}
               <section className="relative overflow-hidden rounded-xl aspect-[4/5] md:aspect-video bg-surface-container-low shadow-2xl">
                 <img 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFbfwe9ns0lhCJ8HDi0ZuYctYJ2Cwc5wF4HpNzul8bnrRheJuMuJ8DGcAfCYUkIM19lXsayQo1W8i2NuHhkkqByaPxKzeWDgJWet5eFx8MLzk0fRuFVC0Hup6cwGgDXh7UF5iwyAFlNJv09vlwLmqMHbX1lzyDJRC_OpkfYSFIh_8FgycUKRaSoOmGGc5PVyaAU3-hXGkgdQsZji2DfkhXNOvLnuc9iyhWlAwGf-hEp59EgO26c2-IVARZw7LOpcL4S5mm7HVOG8c" 
+                  src="/images/hero.png" 
                   alt="Leather Texture" 
                   className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-luminosity"
                   referrerPolicy="no-referrer"
