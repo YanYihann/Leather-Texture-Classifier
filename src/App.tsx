@@ -1239,7 +1239,7 @@ export default function App() {
                         <div className="w-full h-full bg-surface-container-highest" />
                       )}
                     </div>
-                    <div className="flex-grow min-w-0 h-28 flex flex-col justify-center pt-3">
+                    <div className="flex-grow min-w-0 min-h-28 flex flex-col justify-center pt-3 pr-28 pb-10 relative">
                       <h4 className="font-headline font-bold text-xl leading-tight pr-24">{scan.matches[0].label}</h4>
                       <div className="mt-2.5 space-y-1">
                         <p className="text-base text-outline flex items-center gap-2">
@@ -1256,7 +1256,7 @@ export default function App() {
                           {noteLabel}: {scan.note}
                         </p>
                       )}
-                      <div className="mt-4 flex items-center justify-end gap-2 pr-0">
+                      <div className="absolute right-0 bottom-0 flex items-center justify-end gap-2 pr-0">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
