@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play, FileUp, Cpu, CheckCircle2, Circle, Hourglass, Database, Search, CalendarDays, Clock3, Check } from 'lucide-react';
+import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play, FileUp, Cpu, CheckCircle2, Circle, Hourglass, Database, Search, CalendarDays, Clock3, Check, Bell, Menu, Pencil, BarChart3, SlidersHorizontal, Wifi, WifiOff, Cloud, HardDrive, Download, Trash2, RefreshCw, Smartphone, Monitor, Shield, Lock, Info, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScanResult, MOCK_SCANS, LEATHER_CATEGORIES, AVG_PRECISION } from './types';
 import { classifyLeather } from './services/gemini';
@@ -17,6 +17,7 @@ const MAX_HISTORY_ITEMS = 30;
 const MAX_PERSISTED_ITEMS = 30;
 const UI_LANG_KEY = 'ui_language';
 const UI_THEME_KEY = 'ui_theme';
+const UI_PREF_KEY = 'ui_profile_prefs';
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const historyEndpoint = apiBaseUrl ? `${apiBaseUrl}/api/history` : '/api/history';
 
@@ -112,6 +113,16 @@ function formatHistoryTime(timestamp: number) {
   });
 }
 
+function formatTimeAgo(timestamp: number) {
+  const diffMs = Date.now() - timestamp;
+  const diffMin = Math.max(1, Math.floor(diffMs / 60000));
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay}d ago`;
+}
+
 export default function App() {
   const SCAN_FRAME = { xPct: 0.22, yPct: 0.22, widthPct: 0.56, heightPct: 0.42 };
   const SCAN_CONTAINER_ASPECT = 4 / 5;
@@ -132,6 +143,12 @@ export default function App() {
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
   const [historySyncMode, setHistorySyncMode] = useState<'server' | 'local'>('local');
   const [historySearch, setHistorySearch] = useState('');
+  const [defaultSort, setDefaultSort] = useState<'newest' | 'confidence'>('newest');
+  const [autoSaveHistory, setAutoSaveHistory] = useState(true);
+  const [hdPreviewEnabled, setHdPreviewEnabled] = useState(true);
+  const [hapticFeedbackEnabled, setHapticFeedbackEnabled] = useState(false);
+  const [cameraPermissionState, setCameraPermissionState] = useState<'authorized' | 'denied' | 'prompt' | 'unknown'>('unknown');
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [previewImage, setPreviewImage] = useState<{ src: string; title: string } | null>(null);
   const scanVideoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -144,6 +161,7 @@ export default function App() {
           if (Array.isArray(data?.history)) {
             setHistorySyncMode('server');
             setHistory(data.history.slice(0, MAX_HISTORY_ITEMS));
+            setLastSyncAt(Date.now());
             return;
           }
         }
@@ -174,8 +192,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!autoSaveHistory) return;
     persistHistorySafely(history);
-  }, [history]);
+  }, [history, autoSaveHistory]);
 
   useEffect(() => {
     const validIds = new Set(history.map((item) => item.id));
@@ -185,11 +204,23 @@ export default function App() {
   useEffect(() => {
     const savedLanguage = localStorage.getItem(UI_LANG_KEY);
     const savedTheme = localStorage.getItem(UI_THEME_KEY);
+    const savedPrefs = localStorage.getItem(UI_PREF_KEY);
     if (savedLanguage === 'zh' || savedLanguage === 'en') {
       setLanguage(savedLanguage);
     }
     if (savedTheme === 'dark' || savedTheme === 'light') {
       setTheme(savedTheme);
+    }
+    if (savedPrefs) {
+      try {
+        const prefs = JSON.parse(savedPrefs);
+        if (prefs.defaultSort === 'newest' || prefs.defaultSort === 'confidence') setDefaultSort(prefs.defaultSort);
+        if (typeof prefs.autoSaveHistory === 'boolean') setAutoSaveHistory(prefs.autoSaveHistory);
+        if (typeof prefs.hdPreviewEnabled === 'boolean') setHdPreviewEnabled(prefs.hdPreviewEnabled);
+        if (typeof prefs.hapticFeedbackEnabled === 'boolean') setHapticFeedbackEnabled(prefs.hapticFeedbackEnabled);
+      } catch {
+        // ignore invalid prefs cache
+      }
     }
   }, []);
 
@@ -202,6 +233,34 @@ export default function App() {
     localStorage.setItem(UI_THEME_KEY, theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem(UI_PREF_KEY, JSON.stringify({
+      defaultSort,
+      autoSaveHistory,
+      hdPreviewEnabled,
+      hapticFeedbackEnabled,
+    }));
+  }, [defaultSort, autoSaveHistory, hdPreviewEnabled, hapticFeedbackEnabled]);
+
+  useEffect(() => {
+    const checkCameraPermission = async () => {
+      try {
+        if (!navigator.permissions || !navigator.permissions.query) {
+          setCameraPermissionState('unknown');
+          return;
+        }
+        const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        const normalized = (result.state as 'granted' | 'denied' | 'prompt');
+        if (normalized === 'granted') setCameraPermissionState('authorized');
+        else if (normalized === 'denied') setCameraPermissionState('denied');
+        else setCameraPermissionState('prompt');
+      } catch {
+        setCameraPermissionState('unknown');
+      }
+    };
+    void checkCameraPermission();
+  }, []);
 
   const text = language === 'zh' ? {
     appName: '革识',
@@ -234,6 +293,53 @@ export default function App() {
     searchHistory: '搜索材质或日期...',
     totalScans: 'TOTAL SCANS',
     avgAccuracy: 'ACCURACY',
+    profileTitle: '个人中心',
+    profileStatus: '使用本地历史模式',
+    editProfile: '编辑资料',
+    performanceAnalytics: '性能分析',
+    totalScansCard: 'TOTAL SCANS',
+    avgConfCard: 'AVG. CONF.',
+    thisWeekCard: 'THIS WEEK',
+    lastScanCard: 'LAST SCAN',
+    appPreferences: '应用偏好',
+    prefTheme: 'Theme',
+    prefLanguage: 'Language',
+    prefSort: 'Default Sort',
+    prefAutoSave: 'Auto-save History',
+    prefHdPreview: 'HD Preview',
+    prefHaptic: 'Haptic Feedback',
+    sortNewest: '最新优先',
+    sortConfidence: '置信度优先',
+    infraSync: '基础设施与同步',
+    historyMode: 'History Mode',
+    connection: 'Connection',
+    backendUrl: 'Backend URL',
+    syncStatus: 'Sync Status',
+    upToDate: 'Up to date',
+    connected: 'Connected',
+    offline: 'Offline',
+    dataManagement: '数据管理',
+    exportHistory: '导出历史 (.json)',
+    syncToServer: '同步到服务器',
+    clearLocalCache: '清理本地缓存',
+    preferencesProfile: '识别偏好',
+    mostIdentified: 'Most Identified',
+    highConfidenceRate: 'High Confidence Rate',
+    recentSummaries: '最近 3 条识别摘要',
+    environment: '环境',
+    device: 'Device',
+    cameraGallery: 'Camera/Gallery',
+    deployment: 'Deployment',
+    authorized: 'Authorized',
+    security: '安全',
+    sessionActive: 'Session Active',
+    twoFaEnabled: '2FA Enabled',
+    teamAccess: 'Team Access',
+    aboutApp: '关于应用',
+    appVersion: 'App Version',
+    modelVersion: 'Model Version',
+    buildNumber: 'Build',
+    logout: '退出登录',
   } : {
     appName: 'LeatherMind',
     allowCamera: 'Please allow camera access to scan leather.',
@@ -265,6 +371,53 @@ export default function App() {
     searchHistory: 'Search materials or dates...',
     totalScans: 'TOTAL SCANS',
     avgAccuracy: 'ACCURACY',
+    profileTitle: 'Profile',
+    profileStatus: 'Using local history mode',
+    editProfile: 'Edit Profile',
+    performanceAnalytics: 'PERFORMANCE ANALYTICS',
+    totalScansCard: 'TOTAL SCANS',
+    avgConfCard: 'AVG. CONF.',
+    thisWeekCard: 'THIS WEEK',
+    lastScanCard: 'LAST SCAN',
+    appPreferences: 'APPLICATION PREFERENCES',
+    prefTheme: 'Theme',
+    prefLanguage: 'Language',
+    prefSort: 'Default Sort',
+    prefAutoSave: 'Auto-save History',
+    prefHdPreview: 'HD Preview',
+    prefHaptic: 'Haptic Feedback',
+    sortNewest: 'Newest First',
+    sortConfidence: 'Confidence First',
+    infraSync: 'INFRASTRUCTURE & SYNC',
+    historyMode: 'History Mode',
+    connection: 'Connection',
+    backendUrl: 'Backend URL',
+    syncStatus: 'Sync Status',
+    upToDate: 'Up to date',
+    connected: 'Connected',
+    offline: 'Offline',
+    dataManagement: 'DATA MANAGEMENT',
+    exportHistory: 'Export History (.json)',
+    syncToServer: 'Sync to Server',
+    clearLocalCache: 'Clear Local Cache',
+    preferencesProfile: 'MY RECOGNITION PREFERENCES',
+    mostIdentified: 'Most Identified',
+    highConfidenceRate: 'High Confidence Rate',
+    recentSummaries: 'Recent 3 Summaries',
+    environment: 'ENVIRONMENT',
+    device: 'Device',
+    cameraGallery: 'Camera/Gallery',
+    deployment: 'Deployment',
+    authorized: 'Authorized',
+    security: 'SECURITY',
+    sessionActive: 'Session Active',
+    twoFaEnabled: '2FA Enabled',
+    teamAccess: 'Team Access',
+    aboutApp: 'ABOUT',
+    appVersion: 'App Version',
+    modelVersion: 'Model Version',
+    buildNumber: 'Build',
+    logout: 'Terminate Session',
   };
   const deviceLabel = language === 'zh' ? '设备' : 'Device';
   const timeLabel = language === 'zh' ? '时间' : 'Time';
@@ -366,6 +519,39 @@ export default function App() {
   const avgAccuracy = history.length
     ? history.reduce((sum, item) => sum + (item.matches?.[0]?.confidence || 0), 0) / history.length
     : 0;
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const thisWeekScans = history.filter((item) => item.timestamp >= weekAgo).length;
+  const lastScanTimeAgo = history.length ? formatTimeAgo(history[0].timestamp) : '--';
+  const mostIdentifiedLabel = history.length
+    ? (Object.entries(
+        history.reduce<Record<string, number>>((acc, item) => {
+          const key = item.matches?.[0]?.label || 'Unknown';
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {})
+      ) as [string, number][]).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown'
+    : '--';
+  const highConfidenceRate = history.length
+    ? Math.round((history.filter((item) => (item.matches?.[0]?.confidence || 0) >= 90).length / history.length) * 100)
+    : 0;
+  const deploymentLabel = (() => {
+    const host = typeof window !== 'undefined' ? window.location.hostname : '';
+    if (!host) return 'Unknown';
+    if (host.includes('localhost') || host === '127.0.0.1') return 'Local';
+    if (host.includes('trycloudflare.com') || host.includes('yanyihan.top')) return 'Tunnel';
+    if (host.includes('onrender.com')) return 'Render';
+    if (host.includes('github.io')) return 'GitHub Pages';
+    return host;
+  })();
+  const currentDevice = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '') ? 'Mobile' : 'Desktop';
+  const cameraPermissionLabel =
+    cameraPermissionState === 'authorized'
+      ? text.authorized
+      : cameraPermissionState === 'denied'
+      ? 'Denied'
+      : cameraPermissionState === 'prompt'
+      ? 'Prompt'
+      : 'Unknown';
   const stage1Done = analysisProgress >= 36;
   const stage2Done = analysisProgress >= 72;
   const stage3Done = analysisProgress >= 96;
@@ -396,6 +582,7 @@ export default function App() {
       const data = await response.json();
       if (!Array.isArray(data?.history)) return false;
       setHistory(data.history.slice(0, MAX_HISTORY_ITEMS));
+      setLastSyncAt(Date.now());
       return true;
     } catch {
       return false;
@@ -1308,6 +1495,196 @@ export default function App() {
               </div>
             </motion.div>
           )}
+
+          {currentView === 'profile' && (
+            <motion.div
+              key="profile"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-6"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-primary">
+                  <Menu className="w-5 h-5" />
+                  <h2 className="headline-sm mt-0">Leather Intelligence</h2>
+                </div>
+                <button className="p-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors">
+                  <Bell className="w-5 h-5" />
+                </button>
+              </div>
+
+              <section className="rounded-3xl bg-surface-container-low border border-outline-variant/20 p-5">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden border border-outline-variant/30">
+                    <img src="/images/avatar.svg" alt="Profile Avatar" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-grow">
+                    <h3 className="font-headline font-bold text-2xl leading-tight">Marcus Thorne</h3>
+                    <p className="body-md text-on-surface-variant">m.thorne@leathermind.ai</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="label-sm px-2 py-1 rounded-md bg-primary/20 text-primary">Senior Inspector</span>
+                      <span className="label-sm px-2 py-1 rounded-md bg-tertiary/20 text-tertiary">{historySyncMode === 'server' ? 'Server Mode' : 'Local Mode'}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-outline-variant/20">
+                  <p className="body-md text-on-surface-variant">{historySyncMode === 'server' ? text.connected : text.profileStatus}</p>
+                  <button className="label-sm text-primary flex items-center gap-1">
+                    <Pencil className="w-3.5 h-3.5" />
+                    {text.editProfile}
+                  </button>
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <p className="label-sm text-outline">{text.performanceAnalytics}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4">
+                    <p className="label-sm text-outline">{text.totalScansCard}</p>
+                    <p className="font-headline font-extrabold text-4xl mt-1">{history.length}</p>
+                  </div>
+                  <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4">
+                    <p className="label-sm text-outline">{text.avgConfCard}</p>
+                    <p className="font-headline font-extrabold text-4xl text-primary mt-1">{avgAccuracy.toFixed(1)}%</p>
+                  </div>
+                  <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4">
+                    <p className="label-sm text-outline">{text.thisWeekCard}</p>
+                    <p className="font-headline font-extrabold text-4xl mt-1">{thisWeekScans}</p>
+                  </div>
+                  <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4">
+                    <p className="label-sm text-outline">{text.lastScanCard}</p>
+                    <p className="font-headline font-extrabold text-3xl mt-1">{lastScanTimeAgo}</p>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-surface-container-low border border-outline-variant/20 p-3 flex items-center justify-between">
+                  <p className="body-md text-on-surface-variant">{text.mostIdentified}</p>
+                  <p className="body-md font-semibold text-primary">{mostIdentifiedLabel}</p>
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <p className="label-sm text-outline">{text.appPreferences}</p>
+                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 divide-y divide-outline-variant/20">
+                  <PreferenceRow label={text.prefTheme} value={theme === 'dark' ? 'Dark' : 'Light'} />
+                  <PreferenceRow label={text.prefLanguage} value={language === 'zh' ? '中文' : 'English (US)'} />
+                  <PreferenceRow label={text.prefSort} value={defaultSort === 'newest' ? text.sortNewest : text.sortConfidence} />
+                  <ToggleRow label={text.prefAutoSave} enabled={autoSaveHistory} onToggle={() => setAutoSaveHistory((v) => !v)} />
+                  <ToggleRow label={text.prefHdPreview} enabled={hdPreviewEnabled} onToggle={() => setHdPreviewEnabled((v) => !v)} />
+                  <ToggleRow label={text.prefHaptic} enabled={hapticFeedbackEnabled} onToggle={() => setHapticFeedbackEnabled((v) => !v)} />
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <p className="label-sm text-outline">{text.infraSync}</p>
+                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="label-sm text-outline">{text.historyMode}</p>
+                      <p className="body-md font-semibold">{historySyncMode === 'server' ? 'Server' : 'Local'}</p>
+                    </div>
+                    <div>
+                      <p className="label-sm text-outline">{text.connection}</p>
+                      <p className={`body-md font-semibold flex items-center gap-1 ${historySyncMode === 'server' ? 'text-tertiary' : 'text-outline'}`}>
+                        {historySyncMode === 'server' ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
+                        {historySyncMode === 'server' ? text.connected : text.offline}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="label-sm text-outline">{text.backendUrl}</p>
+                    <p className="body-md break-all">{apiBaseUrl || window.location.origin}</p>
+                  </div>
+                  <div>
+                    <p className="label-sm text-outline">{text.syncStatus}</p>
+                    <p className="body-md">{lastSyncAt ? `${text.upToDate} • ${formatToMinute(lastSyncAt)}` : text.offline}</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <p className="label-sm text-outline">{text.dataManagement}</p>
+                <button className="w-full py-3 rounded-xl bg-surface-container-low border border-outline-variant/20 label-sm hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
+                  <Download className="w-4 h-4" />
+                  {text.exportHistory}
+                </button>
+                <button className="w-full py-3 rounded-xl bg-surface-container-low border border-outline-variant/20 label-sm hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
+                  <RefreshCw className="w-4 h-4" />
+                  {text.syncToServer}
+                </button>
+                <button className="w-full py-3 rounded-xl bg-surface-container-low border border-outline-variant/20 label-sm hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2">
+                  <Trash2 className="w-4 h-4" />
+                  {text.clearLocalCache}
+                </button>
+              </section>
+
+              <section className="space-y-3">
+                <p className="label-sm text-outline">{text.preferencesProfile}</p>
+                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="label-sm px-2 py-1 rounded-md bg-primary/15 text-primary">{mostIdentifiedLabel}</span>
+                    <span className="label-sm px-2 py-1 rounded-md bg-tertiary/15 text-tertiary">{text.highConfidenceRate}: {highConfidenceRate}%</span>
+                    <span className="label-sm px-2 py-1 rounded-md bg-surface-container-high text-on-surface-variant">Favorites: 0</span>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="label-sm text-outline">{text.recentSummaries}</p>
+                    {history.slice(0, 3).map((item) => (
+                      <div key={item.id} className="rounded-lg bg-surface-container-high p-2">
+                        <p className="body-md line-clamp-1">{item.matches?.[0]?.label || 'Unknown'} • {item.matches?.[0]?.confidence || 0}%</p>
+                      </div>
+                    ))}
+                    {!history.length && <p className="body-md text-outline">No records yet.</p>}
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <p className="label-sm text-outline">{text.environment}</p>
+                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="body-md text-on-surface-variant">{text.device}</p>
+                    <p className="body-md flex items-center gap-1">{currentDevice === 'Mobile' ? <Smartphone className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}{currentDevice}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="body-md text-on-surface-variant">{text.cameraGallery}</p>
+                    <p className="body-md text-primary">{cameraPermissionLabel}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="body-md text-on-surface-variant">{text.deployment}</p>
+                    <p className="body-md">{deploymentLabel}</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <p className="label-sm text-outline">{text.security}</p>
+                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="body-md flex items-center gap-2"><Shield className="w-4 h-4" /> {text.sessionActive}</p>
+                    <span className="label-sm px-2 py-1 rounded-md bg-primary/20 text-primary">{text.twoFaEnabled}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-on-surface-variant">
+                    <p className="body-md flex items-center gap-2"><Lock className="w-4 h-4" /> {text.teamAccess}</p>
+                    <Lock className="w-4 h-4" />
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-3 pb-4">
+                <p className="label-sm text-outline">{text.aboutApp}</p>
+                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-2">
+                  <p className="body-md">{text.appVersion}: v2.1.0</p>
+                  <p className="body-md">{text.modelVersion}: v4.2</p>
+                  <p className="body-md">{text.buildNumber}: 2026.03.25</p>
+                  <p className="body-md text-outline flex items-center gap-1"><Info className="w-4 h-4" /> Privacy Policy & EULA</p>
+                </div>
+                <button className="w-full py-4 rounded-2xl bg-[#E9A79F] text-[#351d16] label-sm hover:brightness-95 transition-all flex items-center justify-center gap-2">
+                  <LogOut className="w-4 h-4" />
+                  {text.logout}
+                </button>
+              </section>
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
 
@@ -1392,6 +1769,29 @@ function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: (
         {React.cloneElement(icon as React.ReactElement, { size: 24 })}
       </div>
       <span className="label-sm mt-1">{label}</span>
+    </button>
+  );
+}
+
+function PreferenceRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between p-4">
+      <p className="body-md">{label}</p>
+      <p className="body-md text-primary">{value}</p>
+    </div>
+  );
+}
+
+function ToggleRow({ label, enabled, onToggle }: { label: string; enabled: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center justify-between p-4 hover:bg-surface-container-high/40 transition-colors"
+    >
+      <p className="body-md text-left">{label}</p>
+      <span className={`w-9 h-5 rounded-full relative transition-colors ${enabled ? 'bg-primary' : 'bg-surface-container-highest'}`}>
+        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-background transition-all ${enabled ? 'left-4' : 'left-0.5'}`} />
+      </span>
     </button>
   );
 }
