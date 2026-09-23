@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "leathermind",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -32,5 +32,6 @@
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "@types/express": "^4.17.21"
-  }
+  },
+  "description": "Bilingual leather texture classification web application with local-model and Gemini fallback inference."
 }
