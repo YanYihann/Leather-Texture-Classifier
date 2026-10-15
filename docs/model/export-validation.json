@@ -1,0 +1,1228 @@
+{
+  "format": "float32",
+  "samples": 203,
+  "top1Matches": 203,
+  "top3OrderMatches": 203,
+  "maxProbabilityDifference": 1.0192394256591797e-05,
+  "bytes": 95614159,
+  "records": [
+    {
+      "class": "Leather_01",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 7.748603820800781e-07
+    },
+    {
+      "class": "Leather_02",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.280568540096283e-09
+    },
+    {
+      "class": "Leather_03",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_04",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_05",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_06",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.5762786865234375e-07
+    },
+    {
+      "class": "Leather_07",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_08",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.7369318306446075e-08
+    },
+    {
+      "class": "Leather_09",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_10",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.327134668827057e-07
+    },
+    {
+      "class": "Leather_100",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_101",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_102",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_103",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_104",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 4.76837158203125e-07
+    },
+    {
+      "class": "Leather_105",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_106",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.862645149230957e-09
+    },
+    {
+      "class": "Leather_107",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.8189894035458565e-10
+    },
+    {
+      "class": "Leather_108",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 7.821654435247183e-11
+    },
+    {
+      "class": "Leather_109",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_11",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 4.172325134277344e-07
+    },
+    {
+      "class": "Leather_110",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_111",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_112",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_113",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.682209014892578e-07
+    },
+    {
+      "class": "Leather_114",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 6.184563972055912e-11
+    },
+    {
+      "class": "Leather_115",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_116",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_117",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 5.960464477539062e-07
+    },
+    {
+      "class": "Leather_118",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 4.0745362639427185e-10
+    },
+    {
+      "class": "Leather_119",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_12",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_120",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_121",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_122",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.3178366720676422e-09
+    },
+    {
+      "class": "Leather_123",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_124",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 4.6566128730773926e-08
+    },
+    {
+      "class": "Leather_125",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_126",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.6193447411060333e-10
+    },
+    {
+      "class": "Leather_127",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_128",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_129",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_13",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_130",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_131",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.346940502524376e-10
+    },
+    {
+      "class": "Leather_132",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_133",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 6.366462912410498e-12
+    },
+    {
+      "class": "Leather_134",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_135",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_136",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_137",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_138",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1932570487260818e-09
+    },
+    {
+      "class": "Leather_139",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.0372681319713593e-10
+    },
+    {
+      "class": "Leather_14",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_140",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.7462298274040222e-10
+    },
+    {
+      "class": "Leather_141",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_142",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_143",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_144",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 4.3655745685100555e-10
+    },
+    {
+      "class": "Leather_145",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_146",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_147",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.000888343900442e-11
+    },
+    {
+      "class": "Leather_148",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 7.916241884231567e-09
+    },
+    {
+      "class": "Leather_149",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_15",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_150",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_151",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_152",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 9.834766387939453e-07
+    },
+    {
+      "class": "Leather_153",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_154",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 7.413327693939209e-07
+    },
+    {
+      "class": "Leather_155",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 4.76837158203125e-07
+    },
+    {
+      "class": "Leather_156",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_157",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.92901711165905e-10
+    },
+    {
+      "class": "Leather_158",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_159",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 9.276845958083868e-11
+    },
+    {
+      "class": "Leather_16",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_160",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.0192394256591797e-05
+    },
+    {
+      "class": "Leather_161",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 4.678964614868164e-06
+    },
+    {
+      "class": "Leather_162",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.8044374883174896e-09
+    },
+    {
+      "class": "Leather_163",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 7.35744833946228e-08
+    },
+    {
+      "class": "Leather_164",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.7881393432617188e-07
+    },
+    {
+      "class": "Leather_165",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_166",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.0766088962554932e-06
+    },
+    {
+      "class": "Leather_167",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.7284841053187847e-09
+    },
+    {
+      "class": "Leather_168",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.1141098588705063e-09
+    },
+    {
+      "class": "Leather_169",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_17",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.5033950805664062e-06
+    },
+    {
+      "class": "Leather_170",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_171",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_172",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_173",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_174",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.637534635141492e-11
+    },
+    {
+      "class": "Leather_175",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.6689300537109375e-06
+    },
+    {
+      "class": "Leather_176",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_177",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.410605131648481e-11
+    },
+    {
+      "class": "Leather_178",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_179",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.039836883544922e-06
+    },
+    {
+      "class": "Leather_18",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.5762786865234375e-07
+    },
+    {
+      "class": "Leather_180",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.6689300537109375e-06
+    },
+    {
+      "class": "Leather_181",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_182",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_183",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_184",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 6.693881005048752e-09
+    },
+    {
+      "class": "Leather_185",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1932570487260818e-09
+    },
+    {
+      "class": "Leather_186",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.764863893389702e-10
+    },
+    {
+      "class": "Leather_187",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.6775524020195007e-09
+    },
+    {
+      "class": "Leather_188",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.762543201446533e-07
+    },
+    {
+      "class": "Leather_189",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.7881393432617188e-06
+    },
+    {
+      "class": "Leather_19",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 6.556510925292969e-07
+    },
+    {
+      "class": "Leather_190",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 6.938353180885315e-08
+    },
+    {
+      "class": "Leather_191",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_192",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.57160684466362e-09
+    },
+    {
+      "class": "Leather_193",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.1100277081131935e-10
+    },
+    {
+      "class": "Leather_194",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_195",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1324882507324219e-06
+    },
+    {
+      "class": "Leather_196",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_197",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 4.001776687800884e-11
+    },
+    {
+      "class": "Leather_198",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 4.511093720793724e-10
+    },
+    {
+      "class": "Leather_199",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_20",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 7.275957614183426e-10
+    },
+    {
+      "class": "Leather_200",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_201",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_202",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.7636921256780624e-08
+    },
+    {
+      "class": "Leather_203",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_21",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.2278178473934531e-11
+    },
+    {
+      "class": "Leather_22",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1641532182693481e-10
+    },
+    {
+      "class": "Leather_23",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 8.003553375601768e-11
+    },
+    {
+      "class": "Leather_24",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.8312206268310547e-07
+    },
+    {
+      "class": "Leather_25",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_26",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_27",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 8.52346420288086e-06
+    },
+    {
+      "class": "Leather_28",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.039836883544922e-06
+    },
+    {
+      "class": "Leather_29",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.055902197957039e-10
+    },
+    {
+      "class": "Leather_30",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_31",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 5.587935447692871e-09
+    },
+    {
+      "class": "Leather_32",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.473825588822365e-10
+    },
+    {
+      "class": "Leather_33",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_34",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_35",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_36",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_37",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_38",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_39",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.0372681319713593e-10
+    },
+    {
+      "class": "Leather_40",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_41",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.5279510989785194e-10
+    },
+    {
+      "class": "Leather_42",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_43",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.000444171950221e-11
+    },
+    {
+      "class": "Leather_44",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.0736479200422764e-10
+    },
+    {
+      "class": "Leather_45",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 9.094947017729282e-11
+    },
+    {
+      "class": "Leather_46",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.3283064365386963e-10
+    },
+    {
+      "class": "Leather_47",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.6007106751203537e-10
+    },
+    {
+      "class": "Leather_48",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_49",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_50",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.964508555829525e-10
+    },
+    {
+      "class": "Leather_51",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_52",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_53",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_54",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_55",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 6.984919309616089e-10
+    },
+    {
+      "class": "Leather_56",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_57",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_58",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_59",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.6370904631912708e-11
+    },
+    {
+      "class": "Leather_60",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_61",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.2223608791828156e-09
+    },
+    {
+      "class": "Leather_62",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_63",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_64",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_65",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1350493878126144e-09
+    },
+    {
+      "class": "Leather_66",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_67",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_68",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1059455573558807e-09
+    },
+    {
+      "class": "Leather_69",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 9.022187441587448e-10
+    },
+    {
+      "class": "Leather_70",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_71",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 3.5762786865234375e-07
+    },
+    {
+      "class": "Leather_72",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 7.275957614183426e-11
+    },
+    {
+      "class": "Leather_73",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.210719347000122e-08
+    },
+    {
+      "class": "Leather_74",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_75",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.8924474716186523e-06
+    },
+    {
+      "class": "Leather_76",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_77",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.2584572434425354e-08
+    },
+    {
+      "class": "Leather_78",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.7881393432617188e-07
+    },
+    {
+      "class": "Leather_79",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 6.83940015733242e-10
+    },
+    {
+      "class": "Leather_80",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_81",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.2223608791828156e-09
+    },
+    {
+      "class": "Leather_82",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 6.556510925292969e-07
+    },
+    {
+      "class": "Leather_83",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.000444171950221e-10
+    },
+    {
+      "class": "Leather_84",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_85",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_86",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1641532182693481e-10
+    },
+    {
+      "class": "Leather_87",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.7462298274040222e-10
+    },
+    {
+      "class": "Leather_88",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_89",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 5.364418029785156e-07
+    },
+    {
+      "class": "Leather_90",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_91",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 2.384185791015625e-07
+    },
+    {
+      "class": "Leather_92",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_93",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_94",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_95",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 5.820766091346741e-10
+    },
+    {
+      "class": "Leather_96",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 9.094947017729282e-11
+    },
+    {
+      "class": "Leather_97",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 1.1920928955078125e-07
+    },
+    {
+      "class": "Leather_98",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 8.381903171539307e-09
+    },
+    {
+      "class": "Leather_99",
+      "sameTop1": true,
+      "sameTop3Order": true,
+      "maxProbabilityDifference": 8.36735125631094e-11
+    }
+  ]
+}

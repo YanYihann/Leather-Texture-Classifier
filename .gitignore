@@ -1,16 +1,29 @@
+# Dependencies and generated builds
 node_modules/
 build/
 dist/
 coverage/
-.DS_Store
 *.log
+.DS_Store
+Thumbs.db
+
+# Secrets; the documented example is intentionally public
 .env*
 !.env.example
 
-# ML artifacts (keep local, do not push to GitHub)
+# Local research inputs; browser model and optimized references are versioned
 dataset_train/
 dataset_val/
 best_leather_model*.pth
 *.pt
 __pycache__/
 *.pyc
+.venv/
+
+# User data and local tooling
+shared_history.json
+shared_history.json.tmp
+.vercel/
+.playwright-cli/
+.impeccable/
+output/

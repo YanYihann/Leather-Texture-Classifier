@@ -2,6 +2,7 @@ export interface LeatherMatch {
   label: string;
   confidence: number;
   description?: string;
+  referenceUrl?: string | null;
 }
 
 export interface ScanResult {
@@ -11,9 +12,9 @@ export interface ScanResult {
   matches: LeatherMatch[];
   device?: string;
   note?: string;
+  source?: 'local' | 'cloud' | 'browser';
 }
 
 export const LEATHER_CATEGORIES = 203;
-export const AVG_PRECISION = 99.2;
 
 export const MOCK_SCANS: ScanResult[] = [];

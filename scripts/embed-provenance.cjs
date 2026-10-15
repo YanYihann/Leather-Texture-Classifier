@@ -1,0 +1,8 @@
+const {spawnSync}=require('node:child_process');
+const fs=require('node:fs');
+const skill=process.env.IMPECCABLE_EXECUTABLE || 'impeccable';
+const prompt='Photorealistic macro studio photograph for a scientific leather-texture classification website. Only the photograph, no text, no UI. A folded sheet of richly detailed cognac-brown pebbled leather, one broad sculptural diagonal fold from lower left toward upper right, beautifully resolved irregular natural grain. Close crop fills every edge with leather. Strong directional studio sidelight, dark plum-shadowed edges and luminous amber ridges, subtle satin sheen rather than glossy plastic. Premium material study, striking editorial art direction but realistic tactile surface. Landscape 3:2 aspect. Wide detailed foreground plane for a pointer-based magnification/pan interaction. No other objects, stitching, furniture, hands, borders, graphics, smoke or abstract glow. The subject is leather material; it will be labeled illustrative imagery and will not stand in for model evidence.';
+const entries=[['public/images/leather-study.webp',prompt],['public/images/leather-study-small.webp',prompt],...JSON.parse(fs.readFileSync('src/data/materials.json','utf8')).flatMap(m=>[[ 'public'+m.image,'Origin: '+m.origin+'; resized reference image from the existing local research dataset.'],['public'+m.thumbnail,'Origin: '+m.origin+'; optimized archive thumbnail from the existing local research dataset.']])];
+let errors=0;
+for(const [file,text] of entries){const r=spawnSync(skill,['embed-prompt',file,'--prompt',text],{encoding:'utf8',windowsHide:true});if(r.status!==0){errors++;console.error(file,r.stderr);}}
+console.log(`Embedded provenance: ${entries.length-errors}/${entries.length}`);

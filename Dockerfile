@@ -14,6 +14,8 @@ ENV PYTHON_EXECUTABLE="/opt/venv/bin/python"
 RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch torchvision pillow
 
 COPY . .
+ARG VITE_INFERENCE_MODE=server
+ENV VITE_INFERENCE_MODE=${VITE_INFERENCE_MODE}
 RUN npm run build
 
 ENV NODE_ENV=production

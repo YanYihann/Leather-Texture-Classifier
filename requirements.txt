@@ -1,0 +1,4 @@
+# Optional server-side inference; not needed for the default browser app.
+torch
+torchvision
+Pillow

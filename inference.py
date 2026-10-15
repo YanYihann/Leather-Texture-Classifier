@@ -8,6 +8,10 @@ from torchvision import models, transforms
 from PIL import Image
 import os
 
+torch.set_num_threads(min(4, os.cpu_count() or 1))
+_model = None
+_device = None
+
 # Load classes
 def load_class_names():
     dataset_dir = os.getenv("DATASET_DIR", "dataset_train")
@@ -34,15 +38,18 @@ def get_model(num_classes):
     model.fc = nn.Linear(num_ftrs, num_classes)
     return model
 
-def predict(base64_str):
+def initialize_model():
+    global _model, _device
+    if _model is not None:
+        return
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     num_classes = len(class_names)
-    
+
     model = get_model(num_classes)
     model_path = os.getenv("MODEL_PATH", "best_leather_model_val.pth")
-    
+
     if not os.path.exists(model_path):
-        return {"error": "Model file not found"}
+        raise RuntimeError("Model file not found")
 
     try:
         state_dict = torch.load(model_path, map_location=device, weights_only=True)
@@ -52,6 +59,11 @@ def predict(base64_str):
     model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
+    _model, _device = model, device
+
+
+def predict(base64_str):
+    initialize_model()
 
     # Preprocessing
     transform = transforms.Compose([
@@ -64,10 +76,10 @@ def predict(base64_str):
     # Decode image
     img_data = base64.b64decode(base64_str.split(',')[1] if ',' in base64_str else base64_str)
     img = Image.open(io.BytesIO(img_data)).convert('RGB')
-    img_t = transform(img).unsqueeze(0).to(device)
+    img_t = transform(img).unsqueeze(0).to(_device)
 
     with torch.no_grad():
-        outputs = model(img_t)
+        outputs = _model(img_t)
         probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
         top_probs, top_indices = torch.topk(probabilities, 3)
 
@@ -75,7 +87,7 @@ def predict(base64_str):
     for i in range(3):
         idx = top_indices[i].item()
         label = class_names[idx]
-        
+
         # Find a reference image in dataset_train
         ref_path = None
         class_dir = os.path.join(os.getenv("DATASET_DIR", "dataset_train"), label)
@@ -93,7 +105,16 @@ def predict(base64_str):
     return {"matches": results}
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
+    if "--serve" in sys.argv:
+        initialize_model()
+        print(json.dumps({"ready": True}), flush=True)
+        for line in sys.stdin:
+            try:
+                payload = json.loads(line)
+                print(json.dumps(predict(payload["image"])), flush=True)
+            except Exception as error:
+                print(json.dumps({"error": str(error)}), flush=True)
+    elif len(sys.argv) > 1:
         base64_input = sys.argv[1]
         print(json.dumps(predict(base64_input)))
     else:

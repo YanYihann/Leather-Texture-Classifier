@@ -1,0 +1,1423 @@
+[
+  {
+    "id": "Leather_01",
+    "image": "/materials/Leather_01.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_01/train_Leather_01_002.png",
+    "thumbnail": "/material-thumbnails/Leather_01.webp"
+  },
+  {
+    "id": "Leather_02",
+    "image": "/materials/Leather_02.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_02/train_Leather_02_002.png",
+    "thumbnail": "/material-thumbnails/Leather_02.webp"
+  },
+  {
+    "id": "Leather_03",
+    "image": "/materials/Leather_03.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_03/train_Leather_03_002.png",
+    "thumbnail": "/material-thumbnails/Leather_03.webp"
+  },
+  {
+    "id": "Leather_04",
+    "image": "/materials/Leather_04.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_04/train_Leather_04_002.png",
+    "thumbnail": "/material-thumbnails/Leather_04.webp"
+  },
+  {
+    "id": "Leather_05",
+    "image": "/materials/Leather_05.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_05/train_Leather_05_002.png",
+    "thumbnail": "/material-thumbnails/Leather_05.webp"
+  },
+  {
+    "id": "Leather_06",
+    "image": "/materials/Leather_06.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_06/train_Leather_06_002.png",
+    "thumbnail": "/material-thumbnails/Leather_06.webp"
+  },
+  {
+    "id": "Leather_07",
+    "image": "/materials/Leather_07.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_07/train_Leather_07_002.png",
+    "thumbnail": "/material-thumbnails/Leather_07.webp"
+  },
+  {
+    "id": "Leather_08",
+    "image": "/materials/Leather_08.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_08/train_Leather_08_002.png",
+    "thumbnail": "/material-thumbnails/Leather_08.webp"
+  },
+  {
+    "id": "Leather_09",
+    "image": "/materials/Leather_09.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_09/train_Leather_09_002.png",
+    "thumbnail": "/material-thumbnails/Leather_09.webp"
+  },
+  {
+    "id": "Leather_10",
+    "image": "/materials/Leather_10.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_10/train_Leather_10_002.png",
+    "thumbnail": "/material-thumbnails/Leather_10.webp"
+  },
+  {
+    "id": "Leather_100",
+    "image": "/materials/Leather_100.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_100/train_Leather_100_002.png",
+    "thumbnail": "/material-thumbnails/Leather_100.webp"
+  },
+  {
+    "id": "Leather_101",
+    "image": "/materials/Leather_101.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_101/train_Leather_101_002.png",
+    "thumbnail": "/material-thumbnails/Leather_101.webp"
+  },
+  {
+    "id": "Leather_102",
+    "image": "/materials/Leather_102.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_102/train_Leather_102_002.png",
+    "thumbnail": "/material-thumbnails/Leather_102.webp"
+  },
+  {
+    "id": "Leather_103",
+    "image": "/materials/Leather_103.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_103/train_Leather_103_002.png",
+    "thumbnail": "/material-thumbnails/Leather_103.webp"
+  },
+  {
+    "id": "Leather_104",
+    "image": "/materials/Leather_104.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_104/train_Leather_104_002.png",
+    "thumbnail": "/material-thumbnails/Leather_104.webp"
+  },
+  {
+    "id": "Leather_105",
+    "image": "/materials/Leather_105.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_105/train_Leather_105_002.png",
+    "thumbnail": "/material-thumbnails/Leather_105.webp"
+  },
+  {
+    "id": "Leather_106",
+    "image": "/materials/Leather_106.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_106/train_Leather_106_002.png",
+    "thumbnail": "/material-thumbnails/Leather_106.webp"
+  },
+  {
+    "id": "Leather_107",
+    "image": "/materials/Leather_107.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_107/train_Leather_107_002.png",
+    "thumbnail": "/material-thumbnails/Leather_107.webp"
+  },
+  {
+    "id": "Leather_108",
+    "image": "/materials/Leather_108.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_108/train_Leather_108_002.png",
+    "thumbnail": "/material-thumbnails/Leather_108.webp"
+  },
+  {
+    "id": "Leather_109",
+    "image": "/materials/Leather_109.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_109/train_Leather_109_002.png",
+    "thumbnail": "/material-thumbnails/Leather_109.webp"
+  },
+  {
+    "id": "Leather_11",
+    "image": "/materials/Leather_11.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_11/train_Leather_11_002.png",
+    "thumbnail": "/material-thumbnails/Leather_11.webp"
+  },
+  {
+    "id": "Leather_110",
+    "image": "/materials/Leather_110.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_110/train_Leather_110_002.png",
+    "thumbnail": "/material-thumbnails/Leather_110.webp"
+  },
+  {
+    "id": "Leather_111",
+    "image": "/materials/Leather_111.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_111/train_Leather_111_002.png",
+    "thumbnail": "/material-thumbnails/Leather_111.webp"
+  },
+  {
+    "id": "Leather_112",
+    "image": "/materials/Leather_112.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_112/train_Leather_112_002.png",
+    "thumbnail": "/material-thumbnails/Leather_112.webp"
+  },
+  {
+    "id": "Leather_113",
+    "image": "/materials/Leather_113.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_113/train_Leather_113_002.png",
+    "thumbnail": "/material-thumbnails/Leather_113.webp"
+  },
+  {
+    "id": "Leather_114",
+    "image": "/materials/Leather_114.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_114/train_Leather_114_002.png",
+    "thumbnail": "/material-thumbnails/Leather_114.webp"
+  },
+  {
+    "id": "Leather_115",
+    "image": "/materials/Leather_115.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_115/train_Leather_115_002.png",
+    "thumbnail": "/material-thumbnails/Leather_115.webp"
+  },
+  {
+    "id": "Leather_116",
+    "image": "/materials/Leather_116.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_116/train_Leather_116_002.png",
+    "thumbnail": "/material-thumbnails/Leather_116.webp"
+  },
+  {
+    "id": "Leather_117",
+    "image": "/materials/Leather_117.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_117/train_Leather_117_002.png",
+    "thumbnail": "/material-thumbnails/Leather_117.webp"
+  },
+  {
+    "id": "Leather_118",
+    "image": "/materials/Leather_118.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_118/train_Leather_118_002.png",
+    "thumbnail": "/material-thumbnails/Leather_118.webp"
+  },
+  {
+    "id": "Leather_119",
+    "image": "/materials/Leather_119.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_119/train_Leather_119_002.png",
+    "thumbnail": "/material-thumbnails/Leather_119.webp"
+  },
+  {
+    "id": "Leather_12",
+    "image": "/materials/Leather_12.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_12/train_Leather_12_002.png",
+    "thumbnail": "/material-thumbnails/Leather_12.webp"
+  },
+  {
+    "id": "Leather_120",
+    "image": "/materials/Leather_120.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_120/train_Leather_120_002.png",
+    "thumbnail": "/material-thumbnails/Leather_120.webp"
+  },
+  {
+    "id": "Leather_121",
+    "image": "/materials/Leather_121.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_121/train_Leather_121_002.png",
+    "thumbnail": "/material-thumbnails/Leather_121.webp"
+  },
+  {
+    "id": "Leather_122",
+    "image": "/materials/Leather_122.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_122/train_Leather_122_002.png",
+    "thumbnail": "/material-thumbnails/Leather_122.webp"
+  },
+  {
+    "id": "Leather_123",
+    "image": "/materials/Leather_123.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_123/train_Leather_123_002.png",
+    "thumbnail": "/material-thumbnails/Leather_123.webp"
+  },
+  {
+    "id": "Leather_124",
+    "image": "/materials/Leather_124.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_124/train_Leather_124_002.png",
+    "thumbnail": "/material-thumbnails/Leather_124.webp"
+  },
+  {
+    "id": "Leather_125",
+    "image": "/materials/Leather_125.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_125/train_Leather_125_002.png",
+    "thumbnail": "/material-thumbnails/Leather_125.webp"
+  },
+  {
+    "id": "Leather_126",
+    "image": "/materials/Leather_126.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_126/train_Leather_126_002.png",
+    "thumbnail": "/material-thumbnails/Leather_126.webp"
+  },
+  {
+    "id": "Leather_127",
+    "image": "/materials/Leather_127.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_127/train_Leather_127_002.png",
+    "thumbnail": "/material-thumbnails/Leather_127.webp"
+  },
+  {
+    "id": "Leather_128",
+    "image": "/materials/Leather_128.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_128/train_Leather_128_002.png",
+    "thumbnail": "/material-thumbnails/Leather_128.webp"
+  },
+  {
+    "id": "Leather_129",
+    "image": "/materials/Leather_129.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_129/train_Leather_129_002.png",
+    "thumbnail": "/material-thumbnails/Leather_129.webp"
+  },
+  {
+    "id": "Leather_13",
+    "image": "/materials/Leather_13.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_13/train_Leather_13_002.png",
+    "thumbnail": "/material-thumbnails/Leather_13.webp"
+  },
+  {
+    "id": "Leather_130",
+    "image": "/materials/Leather_130.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_130/train_Leather_130_002.png",
+    "thumbnail": "/material-thumbnails/Leather_130.webp"
+  },
+  {
+    "id": "Leather_131",
+    "image": "/materials/Leather_131.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_131/train_Leather_131_002.png",
+    "thumbnail": "/material-thumbnails/Leather_131.webp"
+  },
+  {
+    "id": "Leather_132",
+    "image": "/materials/Leather_132.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_132/train_Leather_132_002.png",
+    "thumbnail": "/material-thumbnails/Leather_132.webp"
+  },
+  {
+    "id": "Leather_133",
+    "image": "/materials/Leather_133.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_133/train_Leather_133_002.png",
+    "thumbnail": "/material-thumbnails/Leather_133.webp"
+  },
+  {
+    "id": "Leather_134",
+    "image": "/materials/Leather_134.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_134/train_Leather_134_002.png",
+    "thumbnail": "/material-thumbnails/Leather_134.webp"
+  },
+  {
+    "id": "Leather_135",
+    "image": "/materials/Leather_135.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_135/train_Leather_135_002.png",
+    "thumbnail": "/material-thumbnails/Leather_135.webp"
+  },
+  {
+    "id": "Leather_136",
+    "image": "/materials/Leather_136.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_136/train_Leather_136_002.png",
+    "thumbnail": "/material-thumbnails/Leather_136.webp"
+  },
+  {
+    "id": "Leather_137",
+    "image": "/materials/Leather_137.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_137/train_Leather_137_002.png",
+    "thumbnail": "/material-thumbnails/Leather_137.webp"
+  },
+  {
+    "id": "Leather_138",
+    "image": "/materials/Leather_138.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_138/train_Leather_138_002.png",
+    "thumbnail": "/material-thumbnails/Leather_138.webp"
+  },
+  {
+    "id": "Leather_139",
+    "image": "/materials/Leather_139.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_139/train_Leather_139_002.png",
+    "thumbnail": "/material-thumbnails/Leather_139.webp"
+  },
+  {
+    "id": "Leather_14",
+    "image": "/materials/Leather_14.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_14/train_Leather_14_002.png",
+    "thumbnail": "/material-thumbnails/Leather_14.webp"
+  },
+  {
+    "id": "Leather_140",
+    "image": "/materials/Leather_140.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_140/train_Leather_140_001.png",
+    "thumbnail": "/material-thumbnails/Leather_140.webp"
+  },
+  {
+    "id": "Leather_141",
+    "image": "/materials/Leather_141.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_141/train_Leather_141_002.png",
+    "thumbnail": "/material-thumbnails/Leather_141.webp"
+  },
+  {
+    "id": "Leather_142",
+    "image": "/materials/Leather_142.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_142/train_Leather_142_002.png",
+    "thumbnail": "/material-thumbnails/Leather_142.webp"
+  },
+  {
+    "id": "Leather_143",
+    "image": "/materials/Leather_143.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_143/train_Leather_143_002.png",
+    "thumbnail": "/material-thumbnails/Leather_143.webp"
+  },
+  {
+    "id": "Leather_144",
+    "image": "/materials/Leather_144.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_144/train_Leather_144_002.png",
+    "thumbnail": "/material-thumbnails/Leather_144.webp"
+  },
+  {
+    "id": "Leather_145",
+    "image": "/materials/Leather_145.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_145/train_Leather_145_002.png",
+    "thumbnail": "/material-thumbnails/Leather_145.webp"
+  },
+  {
+    "id": "Leather_146",
+    "image": "/materials/Leather_146.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_146/train_Leather_146_002.png",
+    "thumbnail": "/material-thumbnails/Leather_146.webp"
+  },
+  {
+    "id": "Leather_147",
+    "image": "/materials/Leather_147.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_147/train_Leather_147_002.png",
+    "thumbnail": "/material-thumbnails/Leather_147.webp"
+  },
+  {
+    "id": "Leather_148",
+    "image": "/materials/Leather_148.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_148/train_Leather_148_002.png",
+    "thumbnail": "/material-thumbnails/Leather_148.webp"
+  },
+  {
+    "id": "Leather_149",
+    "image": "/materials/Leather_149.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_149/train_Leather_149_002.png",
+    "thumbnail": "/material-thumbnails/Leather_149.webp"
+  },
+  {
+    "id": "Leather_15",
+    "image": "/materials/Leather_15.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_15/train_Leather_15_002.png",
+    "thumbnail": "/material-thumbnails/Leather_15.webp"
+  },
+  {
+    "id": "Leather_150",
+    "image": "/materials/Leather_150.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_150/train_Leather_150_002.png",
+    "thumbnail": "/material-thumbnails/Leather_150.webp"
+  },
+  {
+    "id": "Leather_151",
+    "image": "/materials/Leather_151.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_151/train_Leather_151_002.png",
+    "thumbnail": "/material-thumbnails/Leather_151.webp"
+  },
+  {
+    "id": "Leather_152",
+    "image": "/materials/Leather_152.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_152/train_Leather_152_002.png",
+    "thumbnail": "/material-thumbnails/Leather_152.webp"
+  },
+  {
+    "id": "Leather_153",
+    "image": "/materials/Leather_153.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_153/train_Leather_153_002.png",
+    "thumbnail": "/material-thumbnails/Leather_153.webp"
+  },
+  {
+    "id": "Leather_154",
+    "image": "/materials/Leather_154.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_154/train_Leather_154_002.png",
+    "thumbnail": "/material-thumbnails/Leather_154.webp"
+  },
+  {
+    "id": "Leather_155",
+    "image": "/materials/Leather_155.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_155/train_Leather_155_002.png",
+    "thumbnail": "/material-thumbnails/Leather_155.webp"
+  },
+  {
+    "id": "Leather_156",
+    "image": "/materials/Leather_156.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_156/train_Leather_156_002.png",
+    "thumbnail": "/material-thumbnails/Leather_156.webp"
+  },
+  {
+    "id": "Leather_157",
+    "image": "/materials/Leather_157.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_157/train_Leather_157_002.png",
+    "thumbnail": "/material-thumbnails/Leather_157.webp"
+  },
+  {
+    "id": "Leather_158",
+    "image": "/materials/Leather_158.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_158/train_Leather_158_002.png",
+    "thumbnail": "/material-thumbnails/Leather_158.webp"
+  },
+  {
+    "id": "Leather_159",
+    "image": "/materials/Leather_159.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_159/train_Leather_159_002.png",
+    "thumbnail": "/material-thumbnails/Leather_159.webp"
+  },
+  {
+    "id": "Leather_16",
+    "image": "/materials/Leather_16.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_16/train_Leather_16_002.png",
+    "thumbnail": "/material-thumbnails/Leather_16.webp"
+  },
+  {
+    "id": "Leather_160",
+    "image": "/materials/Leather_160.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_160/train_Leather_160_002.png",
+    "thumbnail": "/material-thumbnails/Leather_160.webp"
+  },
+  {
+    "id": "Leather_161",
+    "image": "/materials/Leather_161.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_161/train_Leather_161_002.png",
+    "thumbnail": "/material-thumbnails/Leather_161.webp"
+  },
+  {
+    "id": "Leather_162",
+    "image": "/materials/Leather_162.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_162/train_Leather_162_002.png",
+    "thumbnail": "/material-thumbnails/Leather_162.webp"
+  },
+  {
+    "id": "Leather_163",
+    "image": "/materials/Leather_163.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_163/train_Leather_163_002.png",
+    "thumbnail": "/material-thumbnails/Leather_163.webp"
+  },
+  {
+    "id": "Leather_164",
+    "image": "/materials/Leather_164.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_164/train_Leather_164_002.png",
+    "thumbnail": "/material-thumbnails/Leather_164.webp"
+  },
+  {
+    "id": "Leather_165",
+    "image": "/materials/Leather_165.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_165/train_Leather_165_002.png",
+    "thumbnail": "/material-thumbnails/Leather_165.webp"
+  },
+  {
+    "id": "Leather_166",
+    "image": "/materials/Leather_166.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_166/train_Leather_166_002.png",
+    "thumbnail": "/material-thumbnails/Leather_166.webp"
+  },
+  {
+    "id": "Leather_167",
+    "image": "/materials/Leather_167.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_167/train_Leather_167_002.png",
+    "thumbnail": "/material-thumbnails/Leather_167.webp"
+  },
+  {
+    "id": "Leather_168",
+    "image": "/materials/Leather_168.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_168/train_Leather_168_002.png",
+    "thumbnail": "/material-thumbnails/Leather_168.webp"
+  },
+  {
+    "id": "Leather_169",
+    "image": "/materials/Leather_169.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_169/train_Leather_169_002.png",
+    "thumbnail": "/material-thumbnails/Leather_169.webp"
+  },
+  {
+    "id": "Leather_17",
+    "image": "/materials/Leather_17.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_17/train_Leather_17_002.png",
+    "thumbnail": "/material-thumbnails/Leather_17.webp"
+  },
+  {
+    "id": "Leather_170",
+    "image": "/materials/Leather_170.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_170/train_Leather_170_002.png",
+    "thumbnail": "/material-thumbnails/Leather_170.webp"
+  },
+  {
+    "id": "Leather_171",
+    "image": "/materials/Leather_171.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_171/train_Leather_171_002.png",
+    "thumbnail": "/material-thumbnails/Leather_171.webp"
+  },
+  {
+    "id": "Leather_172",
+    "image": "/materials/Leather_172.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_172/train_Leather_172_002.png",
+    "thumbnail": "/material-thumbnails/Leather_172.webp"
+  },
+  {
+    "id": "Leather_173",
+    "image": "/materials/Leather_173.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_173/train_Leather_173_002.png",
+    "thumbnail": "/material-thumbnails/Leather_173.webp"
+  },
+  {
+    "id": "Leather_174",
+    "image": "/materials/Leather_174.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_174/train_Leather_174_002.png",
+    "thumbnail": "/material-thumbnails/Leather_174.webp"
+  },
+  {
+    "id": "Leather_175",
+    "image": "/materials/Leather_175.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_175/train_Leather_175_002.png",
+    "thumbnail": "/material-thumbnails/Leather_175.webp"
+  },
+  {
+    "id": "Leather_176",
+    "image": "/materials/Leather_176.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_176/train_Leather_176_002.png",
+    "thumbnail": "/material-thumbnails/Leather_176.webp"
+  },
+  {
+    "id": "Leather_177",
+    "image": "/materials/Leather_177.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_177/train_Leather_177_002.png",
+    "thumbnail": "/material-thumbnails/Leather_177.webp"
+  },
+  {
+    "id": "Leather_178",
+    "image": "/materials/Leather_178.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_178/train_Leather_178_002.png",
+    "thumbnail": "/material-thumbnails/Leather_178.webp"
+  },
+  {
+    "id": "Leather_179",
+    "image": "/materials/Leather_179.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_179/train_Leather_179_002.png",
+    "thumbnail": "/material-thumbnails/Leather_179.webp"
+  },
+  {
+    "id": "Leather_18",
+    "image": "/materials/Leather_18.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_18/train_Leather_18_002.png",
+    "thumbnail": "/material-thumbnails/Leather_18.webp"
+  },
+  {
+    "id": "Leather_180",
+    "image": "/materials/Leather_180.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_180/train_Leather_180_001.png",
+    "thumbnail": "/material-thumbnails/Leather_180.webp"
+  },
+  {
+    "id": "Leather_181",
+    "image": "/materials/Leather_181.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_181/train_Leather_181_002.png",
+    "thumbnail": "/material-thumbnails/Leather_181.webp"
+  },
+  {
+    "id": "Leather_182",
+    "image": "/materials/Leather_182.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_182/train_Leather_182_002.png",
+    "thumbnail": "/material-thumbnails/Leather_182.webp"
+  },
+  {
+    "id": "Leather_183",
+    "image": "/materials/Leather_183.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_183/train_Leather_183_001.png",
+    "thumbnail": "/material-thumbnails/Leather_183.webp"
+  },
+  {
+    "id": "Leather_184",
+    "image": "/materials/Leather_184.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_184/train_Leather_184_001.jpg",
+    "thumbnail": "/material-thumbnails/Leather_184.webp"
+  },
+  {
+    "id": "Leather_185",
+    "image": "/materials/Leather_185.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_185/train_Leather_185_002.png",
+    "thumbnail": "/material-thumbnails/Leather_185.webp"
+  },
+  {
+    "id": "Leather_186",
+    "image": "/materials/Leather_186.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_186/train_Leather_186_002.png",
+    "thumbnail": "/material-thumbnails/Leather_186.webp"
+  },
+  {
+    "id": "Leather_187",
+    "image": "/materials/Leather_187.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_187/train_Leather_187_002.png",
+    "thumbnail": "/material-thumbnails/Leather_187.webp"
+  },
+  {
+    "id": "Leather_188",
+    "image": "/materials/Leather_188.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_188/train_Leather_188_002.png",
+    "thumbnail": "/material-thumbnails/Leather_188.webp"
+  },
+  {
+    "id": "Leather_189",
+    "image": "/materials/Leather_189.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_189/train_Leather_189_002.png",
+    "thumbnail": "/material-thumbnails/Leather_189.webp"
+  },
+  {
+    "id": "Leather_19",
+    "image": "/materials/Leather_19.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_19/train_Leather_19_002.png",
+    "thumbnail": "/material-thumbnails/Leather_19.webp"
+  },
+  {
+    "id": "Leather_190",
+    "image": "/materials/Leather_190.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_190/train_Leather_190_002.png",
+    "thumbnail": "/material-thumbnails/Leather_190.webp"
+  },
+  {
+    "id": "Leather_191",
+    "image": "/materials/Leather_191.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_191/train_Leather_191_002.png",
+    "thumbnail": "/material-thumbnails/Leather_191.webp"
+  },
+  {
+    "id": "Leather_192",
+    "image": "/materials/Leather_192.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_192/train_Leather_192_002.png",
+    "thumbnail": "/material-thumbnails/Leather_192.webp"
+  },
+  {
+    "id": "Leather_193",
+    "image": "/materials/Leather_193.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_193/train_Leather_193_002.png",
+    "thumbnail": "/material-thumbnails/Leather_193.webp"
+  },
+  {
+    "id": "Leather_194",
+    "image": "/materials/Leather_194.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_194/train_Leather_194_002.png",
+    "thumbnail": "/material-thumbnails/Leather_194.webp"
+  },
+  {
+    "id": "Leather_195",
+    "image": "/materials/Leather_195.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_195/train_Leather_195_002.png",
+    "thumbnail": "/material-thumbnails/Leather_195.webp"
+  },
+  {
+    "id": "Leather_196",
+    "image": "/materials/Leather_196.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_196/train_Leather_196_002.png",
+    "thumbnail": "/material-thumbnails/Leather_196.webp"
+  },
+  {
+    "id": "Leather_197",
+    "image": "/materials/Leather_197.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_197/train_Leather_197_002.png",
+    "thumbnail": "/material-thumbnails/Leather_197.webp"
+  },
+  {
+    "id": "Leather_198",
+    "image": "/materials/Leather_198.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_198/train_Leather_198_002.png",
+    "thumbnail": "/material-thumbnails/Leather_198.webp"
+  },
+  {
+    "id": "Leather_199",
+    "image": "/materials/Leather_199.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_199/train_Leather_199_002.png",
+    "thumbnail": "/material-thumbnails/Leather_199.webp"
+  },
+  {
+    "id": "Leather_20",
+    "image": "/materials/Leather_20.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_20/train_Leather_20_002.png",
+    "thumbnail": "/material-thumbnails/Leather_20.webp"
+  },
+  {
+    "id": "Leather_200",
+    "image": "/materials/Leather_200.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_200/train_Leather_200_002.png",
+    "thumbnail": "/material-thumbnails/Leather_200.webp"
+  },
+  {
+    "id": "Leather_201",
+    "image": "/materials/Leather_201.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_201/train_Leather_201_001.jpg",
+    "thumbnail": "/material-thumbnails/Leather_201.webp"
+  },
+  {
+    "id": "Leather_202",
+    "image": "/materials/Leather_202.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_202/train_Leather_202_002.png",
+    "thumbnail": "/material-thumbnails/Leather_202.webp"
+  },
+  {
+    "id": "Leather_203",
+    "image": "/materials/Leather_203.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_203/train_Leather_54_004.png",
+    "thumbnail": "/material-thumbnails/Leather_203.webp"
+  },
+  {
+    "id": "Leather_21",
+    "image": "/materials/Leather_21.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_21/train_Leather_21_002.png",
+    "thumbnail": "/material-thumbnails/Leather_21.webp"
+  },
+  {
+    "id": "Leather_22",
+    "image": "/materials/Leather_22.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_22/train_Leather_22_002.png",
+    "thumbnail": "/material-thumbnails/Leather_22.webp"
+  },
+  {
+    "id": "Leather_23",
+    "image": "/materials/Leather_23.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_23/train_Leather_23_002.png",
+    "thumbnail": "/material-thumbnails/Leather_23.webp"
+  },
+  {
+    "id": "Leather_24",
+    "image": "/materials/Leather_24.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_24/train_Leather_24_002.png",
+    "thumbnail": "/material-thumbnails/Leather_24.webp"
+  },
+  {
+    "id": "Leather_25",
+    "image": "/materials/Leather_25.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_25/train_Leather_25_002.png",
+    "thumbnail": "/material-thumbnails/Leather_25.webp"
+  },
+  {
+    "id": "Leather_26",
+    "image": "/materials/Leather_26.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_26/train_Leather_26_002.png",
+    "thumbnail": "/material-thumbnails/Leather_26.webp"
+  },
+  {
+    "id": "Leather_27",
+    "image": "/materials/Leather_27.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_27/train_Leather_27_002.png",
+    "thumbnail": "/material-thumbnails/Leather_27.webp"
+  },
+  {
+    "id": "Leather_28",
+    "image": "/materials/Leather_28.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_28/train_Leather_28_002.png",
+    "thumbnail": "/material-thumbnails/Leather_28.webp"
+  },
+  {
+    "id": "Leather_29",
+    "image": "/materials/Leather_29.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_29/train_Leather_29_002.png",
+    "thumbnail": "/material-thumbnails/Leather_29.webp"
+  },
+  {
+    "id": "Leather_30",
+    "image": "/materials/Leather_30.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_30/train_Leather_30_002.png",
+    "thumbnail": "/material-thumbnails/Leather_30.webp"
+  },
+  {
+    "id": "Leather_31",
+    "image": "/materials/Leather_31.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_31/train_Leather_31_002.png",
+    "thumbnail": "/material-thumbnails/Leather_31.webp"
+  },
+  {
+    "id": "Leather_32",
+    "image": "/materials/Leather_32.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_32/train_Leather_32_002.png",
+    "thumbnail": "/material-thumbnails/Leather_32.webp"
+  },
+  {
+    "id": "Leather_33",
+    "image": "/materials/Leather_33.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_33/train_Leather_33_002.png",
+    "thumbnail": "/material-thumbnails/Leather_33.webp"
+  },
+  {
+    "id": "Leather_34",
+    "image": "/materials/Leather_34.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_34/train_Leather_34_002.png",
+    "thumbnail": "/material-thumbnails/Leather_34.webp"
+  },
+  {
+    "id": "Leather_35",
+    "image": "/materials/Leather_35.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_35/train_Leather_35_001.jpg",
+    "thumbnail": "/material-thumbnails/Leather_35.webp"
+  },
+  {
+    "id": "Leather_36",
+    "image": "/materials/Leather_36.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_36/train_Leather_36_002.png",
+    "thumbnail": "/material-thumbnails/Leather_36.webp"
+  },
+  {
+    "id": "Leather_37",
+    "image": "/materials/Leather_37.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_37/train_Leather_37_001.jpg",
+    "thumbnail": "/material-thumbnails/Leather_37.webp"
+  },
+  {
+    "id": "Leather_38",
+    "image": "/materials/Leather_38.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_38/train_Leather_38_002.png",
+    "thumbnail": "/material-thumbnails/Leather_38.webp"
+  },
+  {
+    "id": "Leather_39",
+    "image": "/materials/Leather_39.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_39/train_Leather_39_002.png",
+    "thumbnail": "/material-thumbnails/Leather_39.webp"
+  },
+  {
+    "id": "Leather_40",
+    "image": "/materials/Leather_40.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_40/train_Leather_40_002.png",
+    "thumbnail": "/material-thumbnails/Leather_40.webp"
+  },
+  {
+    "id": "Leather_41",
+    "image": "/materials/Leather_41.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_41/train_Leather_41_002.png",
+    "thumbnail": "/material-thumbnails/Leather_41.webp"
+  },
+  {
+    "id": "Leather_42",
+    "image": "/materials/Leather_42.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_42/train_Leather_42_002.png",
+    "thumbnail": "/material-thumbnails/Leather_42.webp"
+  },
+  {
+    "id": "Leather_43",
+    "image": "/materials/Leather_43.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_43/train_Leather_43_002.png",
+    "thumbnail": "/material-thumbnails/Leather_43.webp"
+  },
+  {
+    "id": "Leather_44",
+    "image": "/materials/Leather_44.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_44/train_Leather_44_002.png",
+    "thumbnail": "/material-thumbnails/Leather_44.webp"
+  },
+  {
+    "id": "Leather_45",
+    "image": "/materials/Leather_45.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_45/train_Leather_45_002.png",
+    "thumbnail": "/material-thumbnails/Leather_45.webp"
+  },
+  {
+    "id": "Leather_46",
+    "image": "/materials/Leather_46.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_46/train_Leather_46_002.png",
+    "thumbnail": "/material-thumbnails/Leather_46.webp"
+  },
+  {
+    "id": "Leather_47",
+    "image": "/materials/Leather_47.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_47/train_Leather_47_002.png",
+    "thumbnail": "/material-thumbnails/Leather_47.webp"
+  },
+  {
+    "id": "Leather_48",
+    "image": "/materials/Leather_48.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_48/train_Leather_48_002.png",
+    "thumbnail": "/material-thumbnails/Leather_48.webp"
+  },
+  {
+    "id": "Leather_49",
+    "image": "/materials/Leather_49.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_49/train_Leather_49_002.png",
+    "thumbnail": "/material-thumbnails/Leather_49.webp"
+  },
+  {
+    "id": "Leather_50",
+    "image": "/materials/Leather_50.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_50/train_Leather_50_002.png",
+    "thumbnail": "/material-thumbnails/Leather_50.webp"
+  },
+  {
+    "id": "Leather_51",
+    "image": "/materials/Leather_51.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_51/train_Leather_51_002.png",
+    "thumbnail": "/material-thumbnails/Leather_51.webp"
+  },
+  {
+    "id": "Leather_52",
+    "image": "/materials/Leather_52.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_52/train_Leather_52_002.png",
+    "thumbnail": "/material-thumbnails/Leather_52.webp"
+  },
+  {
+    "id": "Leather_53",
+    "image": "/materials/Leather_53.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_53/train_Leather_53_002.png",
+    "thumbnail": "/material-thumbnails/Leather_53.webp"
+  },
+  {
+    "id": "Leather_54",
+    "image": "/materials/Leather_54.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_54/train_Leather_54_002.png",
+    "thumbnail": "/material-thumbnails/Leather_54.webp"
+  },
+  {
+    "id": "Leather_55",
+    "image": "/materials/Leather_55.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_55/train_Leather_55_002.png",
+    "thumbnail": "/material-thumbnails/Leather_55.webp"
+  },
+  {
+    "id": "Leather_56",
+    "image": "/materials/Leather_56.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_56/train_Leather_56_002.png",
+    "thumbnail": "/material-thumbnails/Leather_56.webp"
+  },
+  {
+    "id": "Leather_57",
+    "image": "/materials/Leather_57.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_57/train_Leather_57_002.png",
+    "thumbnail": "/material-thumbnails/Leather_57.webp"
+  },
+  {
+    "id": "Leather_58",
+    "image": "/materials/Leather_58.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_58/train_Leather_58_002.png",
+    "thumbnail": "/material-thumbnails/Leather_58.webp"
+  },
+  {
+    "id": "Leather_59",
+    "image": "/materials/Leather_59.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_59/train_Leather_59_002.png",
+    "thumbnail": "/material-thumbnails/Leather_59.webp"
+  },
+  {
+    "id": "Leather_60",
+    "image": "/materials/Leather_60.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_60/train_Leather_60_002.png",
+    "thumbnail": "/material-thumbnails/Leather_60.webp"
+  },
+  {
+    "id": "Leather_61",
+    "image": "/materials/Leather_61.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_61/train_Leather_61_002.png",
+    "thumbnail": "/material-thumbnails/Leather_61.webp"
+  },
+  {
+    "id": "Leather_62",
+    "image": "/materials/Leather_62.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_62/train_Leather_62_002.png",
+    "thumbnail": "/material-thumbnails/Leather_62.webp"
+  },
+  {
+    "id": "Leather_63",
+    "image": "/materials/Leather_63.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_63/train_Leather_63_002.png",
+    "thumbnail": "/material-thumbnails/Leather_63.webp"
+  },
+  {
+    "id": "Leather_64",
+    "image": "/materials/Leather_64.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_64/train_Leather_64_002.png",
+    "thumbnail": "/material-thumbnails/Leather_64.webp"
+  },
+  {
+    "id": "Leather_65",
+    "image": "/materials/Leather_65.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_65/train_Leather_65_002.png",
+    "thumbnail": "/material-thumbnails/Leather_65.webp"
+  },
+  {
+    "id": "Leather_66",
+    "image": "/materials/Leather_66.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_66/train_Leather_66_002.png",
+    "thumbnail": "/material-thumbnails/Leather_66.webp"
+  },
+  {
+    "id": "Leather_67",
+    "image": "/materials/Leather_67.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_67/train_Leather_67_002.png",
+    "thumbnail": "/material-thumbnails/Leather_67.webp"
+  },
+  {
+    "id": "Leather_68",
+    "image": "/materials/Leather_68.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_68/train_Leather_68_002.png",
+    "thumbnail": "/material-thumbnails/Leather_68.webp"
+  },
+  {
+    "id": "Leather_69",
+    "image": "/materials/Leather_69.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_69/train_Leather_69_002.png",
+    "thumbnail": "/material-thumbnails/Leather_69.webp"
+  },
+  {
+    "id": "Leather_70",
+    "image": "/materials/Leather_70.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_70/train_Leather_70_002.png",
+    "thumbnail": "/material-thumbnails/Leather_70.webp"
+  },
+  {
+    "id": "Leather_71",
+    "image": "/materials/Leather_71.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_71/train_Leather_71_002.png",
+    "thumbnail": "/material-thumbnails/Leather_71.webp"
+  },
+  {
+    "id": "Leather_72",
+    "image": "/materials/Leather_72.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_72/train_Leather_72_002.png",
+    "thumbnail": "/material-thumbnails/Leather_72.webp"
+  },
+  {
+    "id": "Leather_73",
+    "image": "/materials/Leather_73.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_73/train_Leather_73_002.png",
+    "thumbnail": "/material-thumbnails/Leather_73.webp"
+  },
+  {
+    "id": "Leather_74",
+    "image": "/materials/Leather_74.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_74/train_Leather_74_002.png",
+    "thumbnail": "/material-thumbnails/Leather_74.webp"
+  },
+  {
+    "id": "Leather_75",
+    "image": "/materials/Leather_75.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_75/train_Leather_75_002.png",
+    "thumbnail": "/material-thumbnails/Leather_75.webp"
+  },
+  {
+    "id": "Leather_76",
+    "image": "/materials/Leather_76.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_76/train_Leather_76_002.png",
+    "thumbnail": "/material-thumbnails/Leather_76.webp"
+  },
+  {
+    "id": "Leather_77",
+    "image": "/materials/Leather_77.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_77/train_Leather_77_002.png",
+    "thumbnail": "/material-thumbnails/Leather_77.webp"
+  },
+  {
+    "id": "Leather_78",
+    "image": "/materials/Leather_78.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_78/train_Leather_78_002.png",
+    "thumbnail": "/material-thumbnails/Leather_78.webp"
+  },
+  {
+    "id": "Leather_79",
+    "image": "/materials/Leather_79.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_79/train_Leather_79_002.png",
+    "thumbnail": "/material-thumbnails/Leather_79.webp"
+  },
+  {
+    "id": "Leather_80",
+    "image": "/materials/Leather_80.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_80/train_Leather_80_002.png",
+    "thumbnail": "/material-thumbnails/Leather_80.webp"
+  },
+  {
+    "id": "Leather_81",
+    "image": "/materials/Leather_81.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_81/train_Leather_81_002.png",
+    "thumbnail": "/material-thumbnails/Leather_81.webp"
+  },
+  {
+    "id": "Leather_82",
+    "image": "/materials/Leather_82.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_82/train_Leather_82_002.png",
+    "thumbnail": "/material-thumbnails/Leather_82.webp"
+  },
+  {
+    "id": "Leather_83",
+    "image": "/materials/Leather_83.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_83/train_Leather_83_002.png",
+    "thumbnail": "/material-thumbnails/Leather_83.webp"
+  },
+  {
+    "id": "Leather_84",
+    "image": "/materials/Leather_84.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_84/train_Leather_84_002.png",
+    "thumbnail": "/material-thumbnails/Leather_84.webp"
+  },
+  {
+    "id": "Leather_85",
+    "image": "/materials/Leather_85.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_85/train_Leather_85_002.png",
+    "thumbnail": "/material-thumbnails/Leather_85.webp"
+  },
+  {
+    "id": "Leather_86",
+    "image": "/materials/Leather_86.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_86/train_Leather_86_002.png",
+    "thumbnail": "/material-thumbnails/Leather_86.webp"
+  },
+  {
+    "id": "Leather_87",
+    "image": "/materials/Leather_87.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_87/train_Leather_87_002.png",
+    "thumbnail": "/material-thumbnails/Leather_87.webp"
+  },
+  {
+    "id": "Leather_88",
+    "image": "/materials/Leather_88.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_88/train_Leather_88_002.png",
+    "thumbnail": "/material-thumbnails/Leather_88.webp"
+  },
+  {
+    "id": "Leather_89",
+    "image": "/materials/Leather_89.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_89/train_Leather_89_002.png",
+    "thumbnail": "/material-thumbnails/Leather_89.webp"
+  },
+  {
+    "id": "Leather_90",
+    "image": "/materials/Leather_90.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_90/train_Leather_90_002.png",
+    "thumbnail": "/material-thumbnails/Leather_90.webp"
+  },
+  {
+    "id": "Leather_91",
+    "image": "/materials/Leather_91.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_91/train_Leather_91_002.png",
+    "thumbnail": "/material-thumbnails/Leather_91.webp"
+  },
+  {
+    "id": "Leather_92",
+    "image": "/materials/Leather_92.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_92/train_Leather_92_002.png",
+    "thumbnail": "/material-thumbnails/Leather_92.webp"
+  },
+  {
+    "id": "Leather_93",
+    "image": "/materials/Leather_93.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_93/train_Leather_93_002.png",
+    "thumbnail": "/material-thumbnails/Leather_93.webp"
+  },
+  {
+    "id": "Leather_94",
+    "image": "/materials/Leather_94.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_94/train_Leather_94_002.png",
+    "thumbnail": "/material-thumbnails/Leather_94.webp"
+  },
+  {
+    "id": "Leather_95",
+    "image": "/materials/Leather_95.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_95/train_Leather_95_002.png",
+    "thumbnail": "/material-thumbnails/Leather_95.webp"
+  },
+  {
+    "id": "Leather_96",
+    "image": "/materials/Leather_96.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_96/train_Leather_96_002.png",
+    "thumbnail": "/material-thumbnails/Leather_96.webp"
+  },
+  {
+    "id": "Leather_97",
+    "image": "/materials/Leather_97.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_97/train_Leather_97_002.png",
+    "thumbnail": "/material-thumbnails/Leather_97.webp"
+  },
+  {
+    "id": "Leather_98",
+    "image": "/materials/Leather_98.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_98/train_Leather_98_002.png",
+    "thumbnail": "/material-thumbnails/Leather_98.webp"
+  },
+  {
+    "id": "Leather_99",
+    "image": "/materials/Leather_99.webp",
+    "samples": 1,
+    "origin": "dataset_train/Leather_99/train_Leather_99_002.png",
+    "thumbnail": "/material-thumbnails/Leather_99.webp"
+  }
+]

@@ -1,0 +1,14 @@
+node_modules
+dist
+dataset_train
+dataset_val
+*.pth
+*.pt
+shared_history.json
+.impeccable
+.playwright-cli
+output
+Literature Review(Leather).md
+__pycache__
+.env*
+!.env.example

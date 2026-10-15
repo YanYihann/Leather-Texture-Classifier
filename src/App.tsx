@@ -1,1901 +1,312 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AnimatePresence, motion, MotionConfig, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
+import { ArrowDown, ArrowRight, ArrowUpRight, Camera, Check, ChevronLeft, ChevronRight, CircleHelp, Database, Download, Expand, FlaskConical, FolderOpen, History, ImagePlus, LayoutDashboard, LoaderCircle, Menu, Moon, Search, Settings2, ShieldCheck, Star, Sun, Trash2, Upload, X, ZoomIn } from 'lucide-react';
+import materials from './data/materials';
+import { publicAsset } from './services/assets';
+import { classifyLeather, referenceUrl, request } from './services/api';
+import { downloadJson, resizeImage } from './services/images';
+import { browserInference, browserSupported, type InferenceProgress } from './services/browser';
+import type { ScanResult } from './types';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Home, Camera, History, User, ChevronRight, Verified, Upload, X, Loader2, Zap, Image as ImageIcon, RotateCcw, Play, FileUp, Cpu, CheckCircle2, Circle, Hourglass, Database, Search, CalendarDays, Clock3, Check, Bell, Menu, Pencil, BarChart3, SlidersHorizontal, Wifi, WifiOff, Cloud, HardDrive, Download, Trash2, RefreshCw, Smartphone, Monitor, Shield, Lock, Info, LogOut } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ScanResult, MOCK_SCANS, LEATHER_CATEGORIES, AVG_PRECISION } from './types';
-import { classifyLeather } from './services/gemini';
-
-type View = 'home' | 'scan' | 'history' | 'profile' | 'result';
-type Language = 'zh' | 'en';
-type Theme = 'dark' | 'light';
-const HISTORY_STORAGE_KEY = 'leather_history';
-const MAX_HISTORY_ITEMS = 30;
-const MAX_PERSISTED_ITEMS = 30;
-const UI_LANG_KEY = 'ui_language';
-const UI_THEME_KEY = 'ui_theme';
-const UI_PREF_KEY = 'ui_profile_prefs';
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-const historyEndpoint = apiBaseUrl ? `${apiBaseUrl}/api/history` : '/api/history';
-
-function getPreviewUrl(scan: ScanResult) {
-  const fallback = (scan.matches?.[0] as any)?.referenceUrl as string | undefined;
-  return scan.imageUrl || fallback || '';
-}
-
-function sanitizeForStorage(scans: ScanResult[]) {
-  // Keep history bounded so storage remains stable across refreshes.
-  return scans.slice(0, MAX_PERSISTED_ITEMS).map((scan) => ({
-    ...scan
-  }));
-}
-
-function persistHistorySafely(scans: ScanResult[]) {
-  let candidate = sanitizeForStorage(scans);
-
-  while (candidate.length > 0) {
-    try {
-      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(candidate));
-      return;
-    } catch {
-      candidate = candidate.slice(0, Math.max(1, Math.floor(candidate.length / 2)));
-    }
+type View = 'overview' | 'classify' | 'archive' | 'history' | 'settings';
+type Language = 'en' | 'zh';
+type Material = typeof materials[number];
+type Health = { modelAvailable: boolean; provider?: string };
+type Translator = (en: string, zh: string) => string;
+const views: View[] = ['overview', 'classify', 'archive', 'history', 'settings'];
+const storageKey = 'leather_history';
+const initialView = () => views.includes(location.hash.slice(1) as View) ? location.hash.slice(1) as View : 'overview';
+function readStored<T>(key: string, fallback: T): T { try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; } catch { return fallback; } }
+function saveStored(key: string, value: unknown) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* Preferences remain usable for this session. */ } }
+function validScans(value: unknown): ScanResult[] { return Array.isArray(value) ? value.filter(scan => scan && typeof scan.id === 'string' && Number.isFinite(scan.timestamp) && Math.abs(scan.timestamp) < 8640000000000000 && Array.isArray(scan.matches) && scan.matches.length && scan.matches.every((match: { label?: string; confidence?: number }) => match && typeof match.label === 'string' && Number.isFinite(match.confidence) && match.confidence! >= 0 && match.confidence! <= 100) && typeof scan.imageUrl === 'string' && (!scan.note || typeof scan.note === 'string')).slice(0, 30) : []; }
+function saveHistory(scans: ScanResult[]) {
+  let items = scans.slice(0, 30);
+  while (items.length) {
+    try { localStorage.setItem(storageKey, JSON.stringify(items)); return items.length === scans.length; }
+    catch { items = items.slice(0, items.length - 1); }
   }
+  try { localStorage.setItem(storageKey, '[]'); } catch { return false; }
+  return scans.length === 0;
+}
+const featured = ['Leather_24', 'Leather_172', 'Leather_06', 'Leather_100'].map(id => materials.find(material => material.id === id)).filter(Boolean) as Material[];
 
-  localStorage.removeItem(HISTORY_STORAGE_KEY);
+function Dialog({ children, title, close, className = '' }: { children: ReactNode; title: string; close: () => void; className?: string }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => { const dialog = ref.current; dialog?.showModal(); return () => dialog?.close(); }, []);
+  return <dialog ref={ref} className={`dialog ${className}`} onCancel={event => { event.preventDefault(); close(); }} onClick={event => { if (event.target === event.currentTarget) close(); }} aria-label={title}>
+    <div className="dialog-head"><h2>{title}</h2><button className="icon-button" aria-label="Close / 关闭" onClick={close}><X size={20} /></button></div>{children}
+  </dialog>;
 }
 
-function createThumbnailDataUrl(dataUrl: string, maxSide = 512, quality = 0.72): Promise<string> {
-  return new Promise((resolve) => {
-    if (!dataUrl?.startsWith('data:image/')) {
-      resolve(dataUrl);
-      return;
-    }
-
-    const img = new Image();
-    img.onload = () => {
-      const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
-      const w = Math.max(1, Math.round(img.width * ratio));
-      const h = Math.max(1, Math.round(img.height * ratio));
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve(dataUrl);
-        return;
-      }
-      ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
-    };
-    img.onerror = () => resolve(dataUrl);
-    img.src = dataUrl;
-  });
-}
-
-function detectDeviceLabel() {
-  const ua = navigator.userAgent || "";
-  if (/iPhone/i.test(ua)) return "iPhone";
-  if (/iPad/i.test(ua)) return "iPad";
-  if (/Android/i.test(ua)) return "Android";
-  if (/Windows/i.test(ua)) return "Windows";
-  if (/Mac OS X|Macintosh/i.test(ua)) return "macOS";
-  if (/Linux/i.test(ua)) return "Linux";
-  return "Unknown";
-}
-
-function formatToMinute(timestamp: number) {
-  const dt = new Date(timestamp);
-  const yyyy = dt.getFullYear();
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const dd = String(dt.getDate()).padStart(2, "0");
-  const hh = String(dt.getHours()).padStart(2, "0");
-  const mi = String(dt.getMinutes()).padStart(2, "0");
-  return `${yyyy}/${mm}/${dd} ${hh}:${mi}`;
-}
-
-function formatHistoryDate(timestamp: number) {
-  return new Date(timestamp).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  });
-}
-
-function formatHistoryTime(timestamp: number) {
-  return new Date(timestamp).toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
-
-function formatTimeAgo(timestamp: number) {
-  const diffMs = Date.now() - timestamp;
-  const diffMin = Math.max(1, Math.floor(diffMs / 60000));
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay}d ago`;
+function MaterialVisual({ t, open }: { t: Translator; open: (image: string, title: string) => void }) {
+  const reduced = useReducedMotion();
+  const [active, setActive] = useState(-1);
+  const [playing, setPlaying] = useState(false);
+  const x = useMotionValue(0), y = useMotionValue(0);
+  const panX = useSpring(x, { stiffness: 80, damping: 24 }), panY = useSpring(y, { stiffness: 80, damping: 24 });
+  const src = active < 0 ? publicAsset('/images/leather-study.webp') : featured[active].image;
+  const label = active < 0 ? t('Leather macro study', '皮革微距展示') : featured[active].id;
+  useEffect(() => {
+    if (!playing || reduced) return;
+    const timer = setInterval(() => setActive(value => (value + 1) % featured.length), 5500);
+    return () => clearInterval(timer);
+  }, [playing, reduced]);
+  const step = (direction: number) => setActive(value => (value + direction + featured.length) % featured.length);
+  return <div className="material-visual">
+    <div className="visual-stage" onPointerMove={event => {
+      if (reduced || event.pointerType !== 'mouse') return;
+      const box = event.currentTarget.getBoundingClientRect();
+      x.set(((event.clientX - box.left) / box.width - .5) * -22);
+      y.set(((event.clientY - box.top) / box.height - .5) * -22);
+    }} onPointerLeave={() => { x.set(0); y.set(0); }}>
+      <AnimatePresence initial={false} mode="sync"><motion.img key={src} src={src} srcSet={active < 0 ? `${publicAsset('/images/leather-study-small.webp')} 900w, ${publicAsset('/images/leather-study.webp')} 1536w` : undefined} sizes="(max-width: 699px) 90vw, (max-width: 959px) 75vw, 50vw" alt={label} className="hero-material" fetchPriority="high" width="1536" height="1024" style={{ x: reduced ? 0 : panX, y: reduced ? 0 : panY }} initial={{ opacity: .4 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduced ? .12 : .45 }} /></AnimatePresence>
+      <div className="sample-target" aria-hidden="true"><span /><span /><span /><span /></div>
+      <div className="visual-caption"><span>{active < 0 ? t('Illustrative material study', '材质展示影像') : t('Dataset reference', '数据集参考样本')}</span><span>{active < 0 ? 'MACRO / 01' : featured[active].id}</span></div>
+      <button className="visual-expand icon-button" aria-label={t('Enlarge material image', '放大材质图像')} onClick={() => open(src, label)}><Expand size={18} /></button>
+    </div>
+    <div className="specimen-controls"><div><strong>{label}</strong></div><div className="sample-selector">
+      <button className="icon-button" aria-label={t('Previous specimen', '上一个样本')} onClick={() => step(-1)}><ChevronLeft size={18} /></button>
+      {featured.slice(0, 3).map((material, index) => <button key={material.id} className={`sample-thumb ${active === index ? 'selected' : ''}`} aria-label={`${t('View', '查看')} ${material.id}`} aria-pressed={active === index} onClick={() => setActive(index)}><img src={material.thumbnail} alt="" width="48" height="48" /></button>)}
+      <button className="icon-button" aria-label={t('Next specimen', '下一个样本')} onClick={() => step(1)}><ChevronRight size={18} /></button>
+    </div></div>
+    {!reduced && <button className="text-button visual-play" onClick={() => setPlaying(value => !value)} aria-pressed={playing}>{playing ? t('Pause specimen sequence', '暂停样本轮播') : t('Play specimen sequence', '播放样本轮播')}<ArrowRight size={14} /></button>}
+  </div>;
 }
 
 export default function App() {
-  const SCAN_FRAME = { xPct: 0.22, yPct: 0.22, widthPct: 0.56, heightPct: 0.42 };
-  const SCAN_CONTAINER_ASPECT = 4 / 5;
-  const FRAME_SCALE_MIN = 0.7;
-  const FRAME_SCALE_MAX = 1.3;
-  const FRAME_SCALE_STEP = 0.05;
-  const [currentView, setCurrentView] = useState<View>('home');
-  const [history, setHistory] = useState<ScanResult[]>([]);
-  const [lastScan, setLastScan] = useState<ScanResult | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState(8);
+  const [view, setView] = useState<View>(initialView);
+  const [language, setLanguage] = useState<Language>(() => readStored('leathermind_language', 'en'));
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => readStored('leathermind_theme', 'dark'));
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [health, setHealth] = useState<Health | null>(null);
+  const [healthChecked, setHealthChecked] = useState(false);
+  const [scans, setScans] = useState<ScanResult[]>(() => validScans(readStored(storageKey, [])));
+  const [syncMode, setSyncMode] = useState<'server' | 'local'>('local');
+  const [loaded, setLoaded] = useState(false);
+  const [autoSave, setAutoSave] = useState<boolean>(() => readStored('leathermind_auto_save', true));
+  const [draft, setDraft] = useState<string | null>(null);
+  const [fileName, setFileName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const [result, setResult] = useState<ScanResult | null>(null);
+  const [matchIndex, setMatchIndex] = useState(0);
+  const [notice, setNotice] = useState('');
+  const [preview, setPreview] = useState<{ src: string; title: string } | null>(null);
+  const [deleteIds, setDeleteIds] = useState<string[] | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<'newest' | 'confidence' | 'name'>('newest');
+  const [archiveQuery, setArchiveQuery] = useState('');
+  const [archivePage, setArchivePage] = useState(0);
+  const [archiveFilter, setArchiveFilter] = useState('all');
+  const [favorites, setFavorites] = useState<string[]>(() => readStored('leathermind_favorites', []));
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const [scanDraftImage, setScanDraftImage] = useState<string | null>(null);
-  const [isFlashOn, setIsFlashOn] = useState(false);
-  const [frameScale, setFrameScale] = useState(1);
-  const [language, setLanguage] = useState<Language>('zh');
-  const [theme, setTheme] = useState<Theme>('dark');
-  const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
-  const [historySyncMode, setHistorySyncMode] = useState<'server' | 'local'>('local');
-  const [historySearch, setHistorySearch] = useState('');
-  const [defaultSort, setDefaultSort] = useState<'newest' | 'confidence' | 'name'>('newest');
-  const [autoSaveHistory, setAutoSaveHistory] = useState(true);
-  const [hdPreviewEnabled, setHdPreviewEnabled] = useState(true);
-  const [hapticFeedbackEnabled, setHapticFeedbackEnabled] = useState(false);
-  const [cameraPermissionState, setCameraPermissionState] = useState<'authorized' | 'denied' | 'prompt' | 'unknown'>('unknown');
-  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
-  const [previewImage, setPreviewImage] = useState<{ src: string; title: string } | null>(null);
-  const scanVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [cameraLoading, setCameraLoading] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [elapsed, setElapsed] = useState(0);
+  const [inferenceProgress, setInferenceProgress] = useState<InferenceProgress | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
+  const preparationRef = useRef(0);
+  const cameraRequestRef = useRef(0);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const previousView = useRef(view);
+  const t: Translator = (en, zh) => language === 'en' ? en : zh;
+  const date = (timestamp: number) => new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(timestamp);
+  const labels: Record<View, string> = { overview: t('Overview', '首页'), classify: t('Classification', '识别工作台'), archive: t('Material archive', '材质档案'), history: t('Scan history', '识别历史'), settings: t('Preferences', '应用偏好') };
+  const navIcons = { overview: LayoutDashboard, classify: FlaskConical, archive: Database, history: History, settings: Settings2 };
+  const navigate = (target: View) => { if (target !== view) location.hash = target; setMenuOpen(false); };
+  const openPreview = (src: string, title: string) => setPreview({ src, title });
+  const stopCamera = () => { cameraRequestRef.current++; streamRef.current?.getTracks().forEach(track => track.stop()); streamRef.current = null; setCameraStream(null); setCameraLoading(false); };
+  const cancelAnalysis = () => { requestRef.current?.abort(); requestRef.current = null; setBusy(false); };
 
   useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        const response = await fetch(historyEndpoint);
-        if (response.ok) {
-          const data = await response.json();
-          if (Array.isArray(data?.history)) {
-            setHistorySyncMode('server');
-            setHistory(data.history.slice(0, MAX_HISTORY_ITEMS));
-            setLastSyncAt(Date.now());
-            return;
-          }
-        }
-      } catch {
-        // Fallback to local cache if server is unavailable.
-      }
-      setHistorySyncMode('local');
-
-      const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
-      if (!saved) {
-        setHistory(MOCK_SCANS);
-        return;
-      }
-
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setHistory(parsed);
-        } else {
-          setHistory(MOCK_SCANS);
-        }
-      } catch {
-        setHistory(MOCK_SCANS);
-      }
-    };
-
-    void loadHistory();
+    const listener = () => setView(initialView());
+    window.addEventListener('hashchange', listener);
+    return () => { window.removeEventListener('hashchange', listener); preparationRef.current++; cameraRequestRef.current++; streamRef.current?.getTracks().forEach(track => track.stop()); requestRef.current?.abort(); };
   }, []);
-
   useEffect(() => {
-    if (!autoSaveHistory) return;
-    persistHistorySafely(history);
-  }, [history, autoSaveHistory]);
-
+    if (previousView.current !== view) { window.scrollTo({ top: 0, behavior: 'instant' }); headingRef.current?.focus({ preventScroll: true }); }
+    previousView.current = view;
+    if (view !== 'classify') { stopCamera(); cancelAnalysis(); }
+    setMenuOpen(false);
+  }, [view]);
+  useEffect(() => { document.documentElement.dataset.theme = theme; saveStored('leathermind_theme', theme); }, [theme]);
+  useEffect(() => { document.documentElement.lang = language === 'en' ? 'en' : 'zh-CN'; document.title = t('LeatherMind | Leather Texture Classification', '革识 | 皮革纹理分类'); saveStored('leathermind_language', language); }, [language]);
+  useEffect(() => { saveStored('leathermind_favorites', favorites); }, [favorites]);
+  useEffect(() => { saveStored('leathermind_auto_save', autoSave); }, [autoSave]);
   useEffect(() => {
-    const validIds = new Set(history.map((item) => item.id));
-    setSelectedHistoryIds((prev) => prev.filter((id) => validIds.has(id)));
-  }, [history]);
-
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem(UI_LANG_KEY);
-    const savedTheme = localStorage.getItem(UI_THEME_KEY);
-    const savedPrefs = localStorage.getItem(UI_PREF_KEY);
-    if (savedLanguage === 'zh' || savedLanguage === 'en') {
-      setLanguage(savedLanguage);
+    if (browserInference) {
+      const controller = new AbortController();
+      fetch(publicAsset('/models/leather-resnet50-v1.onnx'), { method: 'HEAD', signal: controller.signal }).then(response => setHealth({ modelAvailable: response.ok && !response.headers.get('Content-Type')?.includes('text/html') && browserSupported(), provider: 'browser' })).catch(() => setHealth(null)).finally(() => setHealthChecked(true));
+      setLoaded(true);
+      return () => controller.abort();
     }
-    if (savedTheme === 'dark' || savedTheme === 'light') {
-      setTheme(savedTheme);
-    }
-    if (savedPrefs) {
-      try {
-        const prefs = JSON.parse(savedPrefs);
-        if (prefs.defaultSort === 'newest' || prefs.defaultSort === 'confidence' || prefs.defaultSort === 'name') setDefaultSort(prefs.defaultSort);
-        if (typeof prefs.autoSaveHistory === 'boolean') setAutoSaveHistory(prefs.autoSaveHistory);
-        if (typeof prefs.hdPreviewEnabled === 'boolean') setHdPreviewEnabled(prefs.hdPreviewEnabled);
-        if (typeof prefs.hapticFeedbackEnabled === 'boolean') setHapticFeedbackEnabled(prefs.hapticFeedbackEnabled);
-      } catch {
-        // ignore invalid prefs cache
-      }
-    }
+    const controller = new AbortController();
+    request<Health>('/api/health', { signal: controller.signal }).then(setHealth).catch(() => setHealth(null)).finally(() => setHealthChecked(true));
+    request<{ history: ScanResult[] }>('/api/history', { signal: controller.signal }).then(data => {
+      if (!Array.isArray(data.history)) return;
+      setScans(local => [...new Map([...validScans(data.history), ...local].map(scan => [scan.id, scan])).values()].sort((a, b) => b.timestamp - a.timestamp).slice(0, 30));
+      setSyncMode('server');
+    }).catch(() => setSyncMode('local')).finally(() => setLoaded(true));
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    return () => { clearTimeout(timeout); controller.abort(); };
   }, []);
+  useEffect(() => { if (loaded && !saveHistory(scans)) setNotice(t('Browser storage is full. Some older records could not be retained. Export your history to keep a copy.', '浏览器存储空间不足，部分旧记录未能保留。请导出历史记录备份。')); }, [scans, loaded]);
+  useEffect(() => { if (videoRef.current && cameraStream) { videoRef.current.srcObject = cameraStream; void videoRef.current.play().catch(() => setNotice(t('Camera preview could not start. Please upload a photo instead.', '相机预览无法启动，请改为上传图片。'))); } }, [cameraStream]);
+  useEffect(() => { if (!busy) return; setElapsed(0); const timer = setInterval(() => setElapsed(value => value + 1), 1000); return () => clearInterval(timer); }, [busy]);
+  useEffect(() => { setSelectedIds(ids => ids.filter(id => scans.some(scan => scan.id === id))); }, [scans]);
 
-  useEffect(() => {
-    localStorage.setItem(UI_LANG_KEY, language);
-    document.title = language === 'zh' ? '革识' : 'LeatherMind';
-  }, [language]);
-
-  useEffect(() => {
-    localStorage.setItem(UI_THEME_KEY, theme);
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  useEffect(() => {
-    localStorage.setItem(UI_PREF_KEY, JSON.stringify({
-      defaultSort,
-      autoSaveHistory,
-      hdPreviewEnabled,
-      hapticFeedbackEnabled,
-    }));
-  }, [defaultSort, autoSaveHistory, hdPreviewEnabled, hapticFeedbackEnabled]);
-
-  useEffect(() => {
-    const checkCameraPermission = async () => {
-      try {
-        if (!navigator.permissions || !navigator.permissions.query) {
-          setCameraPermissionState('unknown');
-          return;
-        }
-        const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
-        const normalized = (result.state as 'granted' | 'denied' | 'prompt');
-        if (normalized === 'granted') setCameraPermissionState('authorized');
-        else if (normalized === 'denied') setCameraPermissionState('denied');
-        else setCameraPermissionState('prompt');
-      } catch {
-        setCameraPermissionState('unknown');
-      }
-    };
-    void checkCameraPermission();
-  }, []);
-
-  const text = language === 'zh' ? {
-    appName: '革识',
-    allowCamera: '请允许摄像头权限后再扫描。',
-    modelReady: '模型已就绪：AI 材质分析在线',
-    heroTitle: '皮革纹理识别',
-    heroDesc: `使用 AI 在 ${LEATHER_CATEGORIES} 个类别中识别皮革材质`,
-    scanLeather: '扫描皮革',
-    uploadGallery: '从相册上传',
-    database: '数据库',
-    categoriesDesc: '已收录皮革类别',
-    precision: '精度',
-    precisionDesc: '平均识别置信度',
-    recentScans: '最近识别',
-    recentScansDesc: '你的历史识别记录',
-    viewAll: '查看全部',
-    analysisResult: '分析结果',
-    analyzing: '正在分析纹理...',
-    topMatches: 'Top 匹配',
-    done: '完成',
-    scanHistory: '识别历史',
-    clearHistory: '清空历史',
-    clearConfirm: '确认清空所有历史记录吗？',
-    navHome: '首页',
-    navScan: '扫描',
-    navHistory: '历史',
-    navProfile: '我的',
-    confidence: '置信度',
-    archive: 'ARCHIVE',
-    searchHistory: '搜索材质或日期...',
-    totalScans: 'TOTAL SCANS',
-    avgAccuracy: 'ACCURACY',
-    profileTitle: '个人中心',
-    profileStatus: '使用本地历史模式',
-    editProfile: '编辑资料',
-    performanceAnalytics: '性能分析',
-    totalScansCard: '总识别次数',
-    avgConfCard: '平均置信度',
-    thisWeekCard: '本周识别',
-    lastScanCard: '最近识别',
-    appPreferences: '应用偏好',
-    prefTheme: '主题',
-    prefLanguage: '语言',
-    prefSort: '默认排序',
-    prefAutoSave: '自动保存历史',
-    prefHdPreview: '高清预览',
-    prefHaptic: '震动反馈',
-    sortNewest: '最新优先',
-    sortConfidence: '置信度优先',
-    sortName: '名称优先',
-    themeDark: '深色',
-    themeLight: '浅色',
-    langZh: '中文',
-    langEn: 'English',
-    profileUserName: 'Marcus Thorne',
-    profileUserEmail: 'm.thorne@leathermind.ai',
-    profileRole: '高级检验员',
-    serverMode: '服务器模式',
-    localMode: '本地模式',
-    serverModeShort: '服务器',
-    localModeShort: '本地',
-    favorites: '收藏',
-    noRecordsYet: '暂无记录',
-    mobile: '移动端',
-    desktop: '桌面端',
-    denied: '已拒绝',
-    prompt: '待授权',
-    unknown: '未知',
-    deployLocal: '本地',
-    deployTunnel: '隧道',
-    deployRender: 'Render',
-    deployGithubPages: 'GitHub Pages',
-    privacyPolicy: '隐私政策与服务条款',
-    infraSync: '基础设施与同步',
-    historyMode: '历史模式',
-    connection: '连接状态',
-    backendUrl: '后端地址',
-    syncStatus: '同步状态',
-    upToDate: '已同步',
-    connected: '已连接',
-    offline: '离线',
-    dataManagement: '数据管理',
-    exportHistory: '导出历史 (.json)',
-    syncToServer: '同步到服务器',
-    clearLocalCache: '清理本地缓存',
-    preferencesProfile: '识别偏好',
-    mostIdentified: '最常识别',
-    highConfidenceRate: '高置信度占比',
-    recentSummaries: '最近 3 条识别摘要',
-    environment: '环境',
-    device: '设备',
-    cameraGallery: '相机/相册',
-    deployment: '部署环境',
-    authorized: '已授权',
-    security: '安全',
-    sessionActive: '会话正常',
-    twoFaEnabled: '已启用 2FA',
-    teamAccess: '团队访问',
-    aboutApp: '关于应用',
-    appVersion: '应用版本',
-    modelVersion: '模型版本',
-    buildNumber: '构建号',
-    logout: '退出登录',
-  } : {
-    appName: 'LeatherMind',
-    allowCamera: 'Please allow camera access to scan leather.',
-    modelReady: 'Model Ready: AI-driven analysis online.',
-    heroTitle: 'Leather Texture Classifier',
-    heroDesc: `Identify leather materials across ${LEATHER_CATEGORIES} categories with AI precision.`,
-    scanLeather: 'Scan Leather',
-    uploadGallery: 'Upload from Gallery',
-    database: 'Database',
-    categoriesDesc: 'Leather categories cataloged.',
-    precision: 'Precision',
-    precisionDesc: 'Average AI confidence score.',
-    recentScans: 'Recent Scans',
-    recentScansDesc: 'Your previous material classifications',
-    viewAll: 'View All',
-    analysisResult: 'Analysis Result',
-    analyzing: 'Analyzing Texture...',
-    topMatches: 'Top Matches',
-    done: 'Done',
-    scanHistory: 'Scan History',
-    clearHistory: 'Clear History',
-    clearConfirm: 'Clear all saved scan history?',
-    navHome: 'Home',
-    navScan: 'Scan',
-    navHistory: 'History',
-    navProfile: 'Profile',
-    confidence: 'confidence',
-    archive: 'ARCHIVE',
-    searchHistory: 'Search materials or dates...',
-    totalScans: 'TOTAL SCANS',
-    avgAccuracy: 'ACCURACY',
-    profileTitle: 'Profile',
-    profileStatus: 'Using local history mode',
-    editProfile: 'Edit Profile',
-    performanceAnalytics: 'PERFORMANCE ANALYTICS',
-    totalScansCard: 'TOTAL SCANS',
-    avgConfCard: 'AVG. CONF.',
-    thisWeekCard: 'THIS WEEK',
-    lastScanCard: 'LAST SCAN',
-    appPreferences: 'APPLICATION PREFERENCES',
-    prefTheme: 'Theme',
-    prefLanguage: 'Language',
-    prefSort: 'Default Sort',
-    prefAutoSave: 'Auto-save History',
-    prefHdPreview: 'HD Preview',
-    prefHaptic: 'Haptic Feedback',
-    sortNewest: 'Newest First',
-    sortConfidence: 'Confidence First',
-    sortName: 'Name First',
-    themeDark: 'Dark',
-    themeLight: 'Light',
-    langZh: '中文',
-    langEn: 'English',
-    profileUserName: 'Marcus Thorne',
-    profileUserEmail: 'm.thorne@leathermind.ai',
-    profileRole: 'Senior Inspector',
-    serverMode: 'Server Mode',
-    localMode: 'Local Mode',
-    serverModeShort: 'Server',
-    localModeShort: 'Local',
-    favorites: 'Favorites',
-    noRecordsYet: 'No records yet.',
-    mobile: 'Mobile',
-    desktop: 'Desktop',
-    denied: 'Denied',
-    prompt: 'Prompt',
-    unknown: 'Unknown',
-    deployLocal: 'Local',
-    deployTunnel: 'Tunnel',
-    deployRender: 'Render',
-    deployGithubPages: 'GitHub Pages',
-    privacyPolicy: 'Privacy Policy & EULA',
-    infraSync: 'INFRASTRUCTURE & SYNC',
-    historyMode: 'History Mode',
-    connection: 'Connection',
-    backendUrl: 'Backend URL',
-    syncStatus: 'Sync Status',
-    upToDate: 'Up to date',
-    connected: 'Connected',
-    offline: 'Offline',
-    dataManagement: 'DATA MANAGEMENT',
-    exportHistory: 'Export History (.json)',
-    syncToServer: 'Sync to Server',
-    clearLocalCache: 'Clear Local Cache',
-    preferencesProfile: 'MY RECOGNITION PREFERENCES',
-    mostIdentified: 'Most Identified',
-    highConfidenceRate: 'High Confidence Rate',
-    recentSummaries: 'Recent 3 Summaries',
-    environment: 'ENVIRONMENT',
-    device: 'Device',
-    cameraGallery: 'Camera/Gallery',
-    deployment: 'Deployment',
-    authorized: 'Authorized',
-    security: 'SECURITY',
-    sessionActive: 'Session Active',
-    twoFaEnabled: '2FA Enabled',
-    teamAccess: 'Team Access',
-    aboutApp: 'ABOUT',
-    appVersion: 'App Version',
-    modelVersion: 'Model Version',
-    buildNumber: 'Build',
-    logout: 'Terminate Session',
-  };
-  const deviceLabel = language === 'zh' ? '设备' : 'Device';
-  const timeLabel = language === 'zh' ? '时间' : 'Time';
-  const noteLabel = language === 'zh' ? '备注' : 'Note';
-  const editNoteLabel = language === 'zh' ? '备注' : 'Note';
-  const deleteItemLabel = language === 'zh' ? '删除' : 'Delete';
-  const deleteItemConfirm = language === 'zh' ? '确认删除这条历史记录吗？' : 'Delete this history item?';
-  const selectAllLabel = language === 'zh' ? '全选' : 'Select All';
-  const clearSelectLabel = language === 'zh' ? '取消全选' : 'Clear';
-  const deleteSelectedLabel = language === 'zh' ? '删除已选' : 'Delete Selected';
-  const deleteSelectedConfirm = language === 'zh' ? '确认删除已选历史记录吗？' : 'Delete selected history items?';
-  const deleteFailedMsg = language === 'zh' ? '删除失败：后端未成功保存，请稍后重试。' : 'Delete failed: server did not persist the change.';
-
-  const scanText = language === 'zh'
-    ? {
-        liveScanner: '实时扫描',
-        scanWorkspace: '扫描工作台',
-        optimalDistance: '最佳距离',
-        distanceGuide: '距表面 8-12 厘米',
-        capture: '拍照',
-        takePhoto: '拍照',
-        gallery: '相册',
-        qualityTipTitle: '拍摄质量提示',
-        qualityTipBody: '请拍摄清晰的皮革近景纹理，避免强反光和重阴影。',
-        retake: '重拍',
-        startAnalysis: '开始分析',
-        frameSize: '取景框大小',
-      }
-    : {
-        liveScanner: 'Live Scanner',
-        scanWorkspace: 'Scan Workspace',
-        optimalDistance: 'Optimal Distance',
-        distanceGuide: '8-12 cm from surface',
-        capture: 'Capture',
-        takePhoto: 'Take Photo',
-        gallery: 'Gallery',
-        qualityTipTitle: 'Capture Quality Tip',
-        qualityTipBody: 'Use a clear close-up texture image. Avoid heavy glare and deep shadow.',
-        retake: 'Retake',
-        startAnalysis: 'Start Analysis',
-        frameSize: 'Frame Size',
-      };
-  const resultText = language === 'zh'
-    ? {
-        bestMatch: '最佳匹配',
-        aiConfidenceMetric: 'AI 置信度',
-        visualVerification: '视觉校验',
-        yourScan: '你的扫描',
-        reference: '参考样本',
-        top3Similar: 'Top 3 相似匹配',
-        noReference: '暂无参考图',
-        tapToZoom: '点击查看高清',
-        processingTitle: '正在处理材质数据',
-        processingBody: '正在基于本地皮革数据库进行精确分类比对。',
-        neuralLoad: '神经负载',
-        optimizing: '优化中...',
-        stage1: '提取纹理特征...',
-        stage2: '匹配本地训练类别...',
-        stage3: '计算置信度分数...',
-        qualityHigh: '质量指数: 高',
-        aiConfidence: 'AI 置信度',
-        latency: '延迟',
-      }
-    : {
-        bestMatch: 'Best Match',
-        aiConfidenceMetric: 'AI Confidence',
-        visualVerification: 'Visual Verification',
-        yourScan: 'Your Scan',
-        reference: 'Reference',
-        top3Similar: 'Top 3 Similar Matches',
-        noReference: 'No Reference Image',
-        tapToZoom: 'Tap to view HD',
-        processingTitle: 'Processing Material Data',
-        processingBody: 'Cross-referencing local leather database for precise classification.',
-        neuralLoad: 'Neural Logic Load',
-        optimizing: 'Optimizing...',
-        stage1: 'Extracting texture features...',
-        stage2: 'Matching against local trained classes...',
-        stage3: 'Calculating confidence score...',
-        qualityHigh: 'Quality Index: High',
-        aiConfidence: 'AI Confidence',
-        latency: 'Latency',
-      };
-  const scaledWidth = SCAN_FRAME.widthPct * frameScale;
-  const scaledHeight = SCAN_FRAME.heightPct * frameScale;
-  const frameWidthPct = Math.min(0.9, Math.max(0.2, scaledWidth));
-  const frameHeightPct = Math.min(0.8, Math.max(0.15, scaledHeight));
-  const scanFrame = {
-    xPct: SCAN_FRAME.xPct + (SCAN_FRAME.widthPct - frameWidthPct) / 2,
-    yPct: SCAN_FRAME.yPct + (SCAN_FRAME.heightPct - frameHeightPct) / 2,
-    widthPct: frameWidthPct,
-    heightPct: frameHeightPct,
-  };
-  const bestMatch = lastScan?.matches?.[0] ?? null;
-  const similarMatches = lastScan?.matches?.slice(0, 3) ?? [];
-  const filteredHistory = [...history.filter(matchesHistorySearch)].sort((a, b) => {
-    if (defaultSort === 'confidence') {
-      return (b.matches?.[0]?.confidence || 0) - (a.matches?.[0]?.confidence || 0);
-    }
-    if (defaultSort === 'name') {
-      return (a.matches?.[0]?.label || '').localeCompare(b.matches?.[0]?.label || '');
-    }
-    return b.timestamp - a.timestamp;
-  });
-  const filteredHistoryIds = filteredHistory.map((item) => item.id);
-  const allVisibleSelected = filteredHistoryIds.length > 0 && filteredHistoryIds.every((id) => selectedHistoryIds.includes(id));
-  const avgAccuracy = history.length
-    ? history.reduce((sum, item) => sum + (item.matches?.[0]?.confidence || 0), 0) / history.length
-    : 0;
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const thisWeekScans = history.filter((item) => item.timestamp >= weekAgo).length;
-  const lastScanTimeAgo = history.length ? formatTimeAgo(history[0].timestamp) : '--';
-  const mostIdentifiedLabel = history.length
-    ? (Object.entries(
-        history.reduce<Record<string, number>>((acc, item) => {
-          const key = item.matches?.[0]?.label || 'Unknown';
-          acc[key] = (acc[key] || 0) + 1;
-          return acc;
-        }, {})
-      ) as [string, number][]).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown'
-    : '--';
-  const highConfidenceRate = history.length
-    ? Math.round((history.filter((item) => (item.matches?.[0]?.confidence || 0) >= 90).length / history.length) * 100)
-    : 0;
-  const deploymentLabel = (() => {
-    const host = typeof window !== 'undefined' ? window.location.hostname : '';
-    if (!host) return text.unknown;
-    if (host.includes('localhost') || host === '127.0.0.1') return text.deployLocal;
-    if (host.includes('trycloudflare.com') || host.includes('yanyihan.top')) return text.deployTunnel;
-    if (host.includes('onrender.com')) return text.deployRender;
-    if (host.includes('github.io')) return text.deployGithubPages;
-    return host;
-  })();
-  const currentDevice = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '') ? text.mobile : text.desktop;
-  const cameraPermissionLabel =
-    cameraPermissionState === 'authorized'
-      ? text.authorized
-      : cameraPermissionState === 'denied'
-      ? text.denied
-      : cameraPermissionState === 'prompt'
-      ? text.prompt
-      : text.unknown;
-  const stage1Done = analysisProgress >= 36;
-  const stage2Done = analysisProgress >= 72;
-  const stage3Done = analysisProgress >= 96;
-  const pseudoConfidence = bestMatch?.confidence ?? Math.max(84, Math.round(analysisProgress * 0.98));
-  const pseudoLatency = 38 + Math.round((100 - analysisProgress) * 0.2);
-
-  useEffect(() => {
-    if (!isScanning) {
-      setAnalysisProgress(8);
-      return;
-    }
-    setAnalysisProgress(12);
-    const timer = window.setInterval(() => {
-      setAnalysisProgress((prev) => {
-        const capped = 94;
-        const step = prev < 45 ? 5.5 : prev < 75 ? 2.8 : 1.2;
-        return Math.min(capped, prev + step + Math.random() * 1.4);
-      });
-    }, 320);
-    return () => window.clearInterval(timer);
-  }, [isScanning]);
-
-  const refreshHistoryFromServer = async () => {
-    if (historySyncMode !== 'server') return false;
-    try {
-      const response = await fetch(historyEndpoint);
-      if (!response.ok) return false;
-      const data = await response.json();
-      if (!Array.isArray(data?.history)) return false;
-      setHistory(data.history.slice(0, MAX_HISTORY_ITEMS));
-      setLastSyncAt(Date.now());
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const deleteHistoryItem = async (id: string) => {
-    if (!window.confirm(deleteItemConfirm)) return;
-    const previousHistory = history;
-    setHistory((prev) => prev.filter((item) => item.id !== id));
-    setSelectedHistoryIds((prev) => prev.filter((v) => v !== id));
-    if (lastScan?.id === id) {
-      setLastScan(null);
-      setCurrentView('home');
-    }
-    if (historySyncMode !== 'server') return;
-    try {
-      const res = await fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`DELETE failed: ${res.status}`);
-      await refreshHistoryFromServer();
-    } catch {
-      setHistory(previousHistory);
-      alert(deleteFailedMsg);
-    }
-  };
-
-  const toggleHistorySelection = (id: string) => {
-    setSelectedHistoryIds((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
-  };
-
-  function matchesHistorySearch(scan: ScanResult) {
-    const q = historySearch.trim().toLowerCase();
-    if (!q) return true;
-    const label = (scan.matches?.[0]?.label || '').toLowerCase();
-    const note = (scan.note || '').toLowerCase();
-    const date = formatHistoryDate(scan.timestamp).toLowerCase();
-    const time = formatHistoryTime(scan.timestamp).toLowerCase();
-    const device = (scan.device || '').toLowerCase();
-    return label.includes(q) || note.includes(q) || date.includes(q) || time.includes(q) || device.includes(q);
+  async function prepareFile(file?: File) {
+    if (!file || busy || preparing) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { setNotice(t('Choose a JPG, PNG or WebP image.', '请选择 JPG、PNG 或 WebP 图片。')); return; }
+    if (file.size > 15 * 1024 * 1024) { setNotice(t('This image exceeds 15 MB. Choose a smaller file.', '图片超过 15 MB，请选择较小的文件。')); return; }
+    const token = ++preparationRef.current;
+    setPreparing(true); setNotice(''); stopCamera();
+    try { const image = await resizeImage(file); if (token !== preparationRef.current) return; setDraft(image); setFileName(file.name); setResult(null); setMatchIndex(0); navigate('classify'); }
+    catch { setNotice(t('This image could not be read. Choose another JPG, PNG or WebP file.', '无法读取图片，请选择其他 JPG、PNG 或 WebP 文件。')); }
+    finally { if (token === preparationRef.current) setPreparing(false); }
   }
-
-  const toggleSelectAllHistory = () => {
-    const visibleIds = history.filter(matchesHistorySearch).map((item) => item.id);
-    setSelectedHistoryIds((prev) => {
-      const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => prev.includes(id));
-      if (allVisibleSelected) {
-        return prev.filter((id) => !visibleIds.includes(id));
-      }
-      return Array.from(new Set([...prev, ...visibleIds]));
-    });
-  };
-
-  const deleteSelectedHistory = async () => {
-    if (!selectedHistoryIds.length) return;
-    if (!window.confirm(deleteSelectedConfirm)) return;
-    const previousHistory = history;
-    const idSet = new Set(selectedHistoryIds);
-    setHistory((prev) => prev.filter((item) => !idSet.has(item.id)));
-    if (lastScan && idSet.has(lastScan.id)) {
-      setLastScan(null);
-      setCurrentView('home');
-    }
-    if (historySyncMode !== 'server') {
-      setSelectedHistoryIds([]);
-      return;
-    }
+  async function startCamera() {
+    navigate('classify'); setNotice(''); setResult(null);
+    if (!navigator.mediaDevices?.getUserMedia) { setNotice(t('Camera capture needs a secure connection and a supported browser. You can still upload an image.', '拍照需要安全连接和支持相机的浏览器，也可以上传图片。')); return; }
+    stopCamera(); const token = ++cameraRequestRef.current; setCameraLoading(true);
     try {
-      const results = await Promise.all(
-        selectedHistoryIds.map((id) => fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' }))
-      );
-      if (results.some((r) => !r.ok)) throw new Error('Some deletes failed');
-      setSelectedHistoryIds([]);
-      await refreshHistoryFromServer();
-    } catch {
-      setHistory(previousHistory);
-      alert(deleteFailedMsg);
-    }
-  };
-
-  const editHistoryNote = (id: string) => {
-    const current = history.find((item) => item.id === id)?.note || '';
-    const input = window.prompt(noteLabel, current);
-    if (input === null) return;
-    const note = input.trim().slice(0, 300);
-    setHistory((prev) => prev.map((item) => (item.id === id ? { ...item, note } : item)));
-    if (lastScan?.id === id) {
-      setLastScan((prev) => (prev ? { ...prev, note } : prev));
-    }
-    if (historySyncMode !== 'server') return;
-    void fetch(`${historyEndpoint}/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ note }),
-    });
-  };
-
-  const openScanWorkspace = () => {
-    setCurrentView('scan');
-  };
-
-  const startCamera = async () => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      alert(text.allowCamera);
-      return;
-    }
-
-    const attempts: MediaStreamConstraints[] = [
-      { video: { facingMode: { ideal: 'environment' } } },
-      { video: true },
-    ];
-
-    for (const constraints of attempts) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        setCameraStream(stream);
-        setCurrentView('scan');
-        setScanDraftImage(null);
-        setIsFlashOn(false);
-        return;
-      } catch (err) {
-        console.error("Camera attempt failed:", constraints, err);
-      }
-    }
-
-    alert(text.allowCamera);
-  };
-
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-      setIsFlashOn(false);
-    }
-  };
-
-  const toggleFlash = async () => {
-    if (!cameraStream) return;
-    const track = cameraStream.getVideoTracks()[0];
-    if (!track) return;
-    const caps = (track.getCapabilities?.() || {}) as any;
-    if (!caps.torch) return;
-    const next = !isFlashOn;
-    await track.applyConstraints({ advanced: [{ torch: next } as any] });
-    setIsFlashOn(next);
-  };
-
-  const captureImage = () => {
-    const video = scanVideoRef.current;
-    if (!video) return;
-
-    const sourceWidth = video.videoWidth;
-    const sourceHeight = video.videoHeight;
-    if (!sourceWidth || !sourceHeight) return;
-
-    const sourceAspect = sourceWidth / sourceHeight;
-    let visibleX = 0;
-    let visibleY = 0;
-    let visibleWidth = sourceWidth;
-    let visibleHeight = sourceHeight;
-
-    // Mirror object-cover behavior so capture area matches the on-screen frame exactly.
-    if (sourceAspect > SCAN_CONTAINER_ASPECT) {
-      visibleWidth = sourceHeight * SCAN_CONTAINER_ASPECT;
-      visibleX = (sourceWidth - visibleWidth) / 2;
-    } else if (sourceAspect < SCAN_CONTAINER_ASPECT) {
-      visibleHeight = sourceWidth / SCAN_CONTAINER_ASPECT;
-      visibleY = (sourceHeight - visibleHeight) / 2;
-    }
-
-    const cropX = Math.round(visibleX + visibleWidth * scanFrame.xPct);
-    const cropY = Math.round(visibleY + visibleHeight * scanFrame.yPct);
-    const cropWidth = Math.round(visibleWidth * scanFrame.widthPct);
-    const cropHeight = Math.round(visibleHeight * scanFrame.heightPct);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = cropWidth;
-    canvas.height = cropHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-    const base64 = canvas.toDataURL('image/jpeg');
-    stopCamera();
-    setScanDraftImage(base64);
-  };
-
-  const analyzeImage = async (base64: string) => {
-    const startedAt = Date.now();
-    const minLoadingMs = 2200;
-    setIsScanning(true);
-    setCurrentView('result');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false });
+      if (token !== cameraRequestRef.current) { stream.getTracks().forEach(track => track.stop()); return; }
+      streamRef.current = stream; setCameraStream(stream); setDraft(null); setZoom(1);
+    } catch (error) { if (token === cameraRequestRef.current) setNotice(t('Camera access failed. Allow camera permission in your browser, or upload an image.', '相机无法访问。请在浏览器中允许相机权限，或改为上传图片。')); }
+    finally { if (token === cameraRequestRef.current) setCameraLoading(false); }
+  }
+  function capture() {
+    const video = videoRef.current;
+    if (!video?.videoWidth) { setNotice(t('The camera is still initializing. Please try again.', '相机仍在初始化，请稍后再试。')); return; }
+    const aspect = 4 / 3;
+    let width = video.videoWidth, height = video.videoHeight;
+    if (width / height > aspect) width = height * aspect; else height = width / aspect;
+    width /= zoom; height /= zoom;
+    const canvas = document.createElement('canvas'); canvas.width = Math.min(1536, Math.round(width)); canvas.height = Math.round(canvas.width / aspect);
+    const context = canvas.getContext('2d'); if (!context) return;
+    context.drawImage(video, (video.videoWidth - width) / 2, (video.videoHeight - height) / 2, width, height, 0, 0, canvas.width, canvas.height);
+    setDraft(canvas.toDataURL('image/jpeg', .9)); setFileName(t('Camera capture', '相机拍摄')); stopCamera();
+  }
+  async function analyze() {
+    if (!draft || busy || preparing) return;
+    const image = draft;
+    const controller = new AbortController(); requestRef.current = controller; setBusy(true); setInferenceProgress(null); setNotice(''); setResult(null);
+    const timeout = setTimeout(() => controller.abort('timeout'), browserInference ? 300000 : 90000);
     try {
-      const matches = await classifyLeather(base64);
-      const historyImage = await createThumbnailDataUrl(base64);
-      const newScan: ScanResult = {
-        id: Math.random().toString(36).substr(2, 9),
-        timestamp: Date.now(),
-        imageUrl: historyImage,
-        matches,
-        device: detectDeviceLabel(),
-        note: '',
-      };
-      setLastScan(newScan);
-      setHistory(prev => [newScan, ...prev].slice(0, MAX_HISTORY_ITEMS));
-      if (historySyncMode === 'server') {
-        void fetch(historyEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scan: newScan }),
-        });
+      const response = await classifyLeather(image, controller.signal, setInferenceProgress);
+      const thumbnail = await resizeImage(image, 512, .76);
+      if (controller.signal.aborted) return;
+      const scan: ScanResult = { id: crypto.randomUUID(), timestamp: Date.now(), imageUrl: thumbnail, matches: response.matches, source: response.source || 'local', device: /Mobi/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop' };
+      setResult(scan); setMatchIndex(0); setHealth({ modelAvailable: true, provider: scan.source }); setHealthChecked(true);
+      if (autoSave) {
+        setScans(items => [scan, ...items].slice(0, 30));
+        if (syncMode === 'server') try { await request('/api/history', { method: 'POST', body: JSON.stringify({ scan }), signal: controller.signal }); }
+        catch { setSyncMode('local'); setNotice(t('The result is saved on this browser. Shared history is currently unavailable.', '结果已保存在此浏览器，共享历史暂时不可用。')); }
       }
-    } catch (err) {
-      console.error("Classification error:", err);
-    } finally {
-      const elapsed = Date.now() - startedAt;
-      if (elapsed < minLoadingMs) {
-        await new Promise((resolve) => setTimeout(resolve, minLoadingMs - elapsed));
-      }
-      setAnalysisProgress(100);
-      await new Promise((resolve) => setTimeout(resolve, 220));
-      setIsScanning(false);
+    } catch (error) {
+      if (controller.signal.aborted) { if (controller.signal.reason === 'timeout') setNotice(t('Analysis timed out. Please retry or choose a smaller image.', '分析超时，请重试或选择较小的图片。')); }
+      else setNotice(t(`Analysis could not complete. ${error instanceof Error ? error.message : 'Please try again.'}`, '分析未完成，请确认识别服务已连接后重试。'));
+    } finally { clearTimeout(timeout); if (requestRef.current === controller) { requestRef.current = null; setBusy(false); } }
+  }
+  async function deleteScans(ids: string[]) {
+    setDeleteIds(null);
+    if (syncMode === 'server') {
+      try { await Promise.all(ids.map(id => request(`/api/history/${encodeURIComponent(id)}`, { method: 'DELETE' }))); }
+      catch { setNotice(t('Shared deletion did not complete. Refresh history before trying again.', '共享记录删除未完成，请刷新历史后再试。')); void refreshHistory(); return; }
     }
-  };
+    setScans(items => items.filter(scan => !ids.includes(scan.id))); setSelectedIds([]);
+  }
+  async function refreshHistory() {
+    if (browserInference) { setScans(validScans(readStored(storageKey, []))); setNotice(t('Browser records refreshed.', '浏览器记录已刷新。')); return; }
+    try { const data = await request<{ history: ScanResult[] }>('/api/history'); if (!Array.isArray(data.history)) throw new Error(); setScans(validScans(data.history)); setSyncMode('server'); }
+    catch { setSyncMode('local'); setNotice(t('Shared history is unavailable. Your browser records are still available.', '共享历史暂时不可用，此浏览器的记录仍可使用。')); }
+  }
+  async function updateNote(scan: ScanResult, note: string) {
+    const clean = note.trim().slice(0, 300); if (clean === (scan.note || '')) return;
+    setScans(items => items.map(item => item.id === scan.id ? { ...item, note: clean } : item));
+    if (result?.id === scan.id) setResult(value => value ? { ...value, note: clean } : value);
+    if (syncMode === 'server') try { await request(`/api/history/${encodeURIComponent(scan.id)}`, { method: 'PATCH', body: JSON.stringify({ note: clean }) }); }
+    catch { setSyncMode('local'); setNotice(t('Your note was saved locally. Shared sync is unavailable.', '备注已保存在本地，共享同步暂时不可用。')); }
+  }
+  const filteredScans = useMemo(() => scans.filter(scan => `${scan.matches.map(match => match.label).join(' ')} ${scan.note || ''} ${new Date(scan.timestamp).toISOString().slice(0, 10)}`.toLowerCase().includes(query.toLowerCase())).sort((a, b) => sort === 'confidence' ? b.matches[0].confidence - a.matches[0].confidence : sort === 'name' ? a.matches[0].label.localeCompare(b.matches[0].label) : b.timestamp - a.timestamp), [scans, query, sort]);
+  const filteredMaterials = useMemo(() => materials.filter(material => material.id.toLowerCase().includes(archiveQuery.toLowerCase()) && (archiveFilter !== 'favorites' || favorites.includes(material.id))), [archiveQuery, archiveFilter, favorites]);
+  const pageCount = Math.max(1, Math.ceil(filteredMaterials.length / 12));
+  useEffect(() => { setArchivePage(0); }, [archiveQuery, archiveFilter]);
+  useEffect(() => { setArchivePage(page => Math.min(page, pageCount - 1)); }, [pageCount]);
+  const toggleFavorite = (id: string) => setFavorites(items => items.includes(id) ? items.filter(item => item !== id) : [...items, id]);
+  const currentMatch = result?.matches[matchIndex];
+  const reference = currentMatch ? referenceUrl(currentMatch.referenceUrl) || materials.find(material => material.id === currentMatch.label)?.image : null;
+  const status = !healthChecked ? t('Checking model', '检查模型中') : health?.modelAvailable ? browserInference ? t('On-device inference', '浏览器本地推理') : t('Inference connected', '推理服务已连接') : t('Inference unavailable', '推理服务未连接');
 
-  const startAnalysisFromScan = async () => {
-    if (!scanDraftImage) return;
-    await analyzeImage(scanDraftImage);
-  };
-
-  const retakePhoto = async () => {
-    setScanDraftImage(null);
-    await startCamera();
-  };
-
-  const handleScanFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    stopCamera();
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      setScanDraftImage(base64);
-      setCurrentView('scan');
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64 = event.target?.result as string;
-      await analyzeImage(base64);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const getMatchReferenceUrl = (match: any) => {
-    return match?.referenceUrl || '';
-  };
-
-  return (
-    <div className="min-h-screen bg-background text-on-background flex flex-col relative overflow-hidden">
-      <div className="fixed inset-0 leather-grain-overlay z-50 pointer-events-none" />
-
-      {/* Header */}
-      <header className="h-16 flex items-center justify-between px-6 fixed top-0 w-full z-40 bg-background/80 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/20">
-            <img 
-              src="/images/avatar.svg" 
-              alt="Avatar" 
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-          <h1 className="font-headline font-extrabold text-primary tracking-tighter text-xl">{text.appName}</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setLanguage((prev) => (prev === 'zh' ? 'en' : 'zh'))}
-            className="px-3 py-1.5 rounded-lg bg-surface-container-high text-xs font-label uppercase tracking-wider hover:bg-surface-variant transition-colors"
-          >
-            {language === 'zh' ? 'EN' : '中'}
-          </button>
-          <button
-            onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-            className="px-3 py-1.5 rounded-lg bg-surface-container-high text-xs font-label uppercase tracking-wider hover:bg-surface-variant transition-colors"
-          >
-            {theme === 'dark' ? 'Light' : 'Dark'}
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-grow pt-16 pb-24 px-6 max-w-2xl mx-auto w-full">
-        <AnimatePresence mode="wait">
-          {currentView === 'home' && (
-            <motion.div
-              key="home"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-10"
-            >
-              {/* Hero */}
-              <section className="relative overflow-hidden rounded-xl aspect-[4/5] md:aspect-video bg-surface-container-low shadow-2xl">
-                <img 
-                  src="/images/home.png" 
-                  alt="Leather Texture" 
-                  className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-luminosity"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-surface-container-lowest/60 backdrop-blur-md border border-outline-variant/10">
-                    <span className="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#e9c349]" />
-                    <span className="label-sm">{text.modelReady}</span>
-                  </div>
-                  <h2 className="font-headline font-extrabold text-4xl tracking-tight leading-tight mb-2">{text.heroTitle}</h2>
-                  <p className="font-body text-on-surface-variant text-sm max-w-sm leading-relaxed">{text.heroDesc}</p>
-                </div>
-              </section>
-
-              {/* Actions */}
-              <div className="flex flex-col gap-3">
-                <button 
-                  onClick={openScanWorkspace}
-                  className="w-full py-4 rounded-lg bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-bold text-lg shadow-xl shadow-black/20 flex items-center justify-center gap-4 active:scale-[0.98] transition-all"
-                >
-                  <Camera className="w-8 h-8" />
-                  {text.scanLeather}
-                </button>
-                <label className="w-full py-4 rounded-lg bg-surface-container-high border border-outline-variant/20 text-on-surface font-headline font-bold text-lg flex items-center justify-center gap-4 hover:bg-surface-variant transition-colors active:scale-[0.98] cursor-pointer">
-                  <FileUp className="w-8 h-8" />
-                  {text.uploadGallery}
-                  <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
-                </label>
-              </div>
-
-              {/* Stats */}
-              <section className="grid grid-cols-2 gap-4">
-                <div className="bg-surface-container-low p-5 rounded-xl border-l-4 border-primary">
-                  <p className="label-sm text-outline mb-1">{text.database}</p>
-                  <p className="font-headline font-bold text-2xl text-primary">{LEATHER_CATEGORIES}</p>
-                  <p className="font-body text-[11px] text-on-surface-variant leading-tight">{text.categoriesDesc}</p>
-                </div>
-                <div className="bg-surface-container-low p-5 rounded-xl border-l-4 border-tertiary">
-                  <p className="label-sm text-outline mb-1">{text.precision}</p>
-                  <p className="font-headline font-bold text-2xl text-tertiary">{AVG_PRECISION}%</p>
-                  <p className="font-body text-[11px] text-on-surface-variant leading-tight">{text.precisionDesc}</p>
-                </div>
-              </section>
-
-              {/* Recent Scans */}
-              <section>
-                <div className="flex justify-between items-end mb-6">
-                  <div>
-                    <h3 className="headline-sm mt-4 tracking-tight">{text.recentScans}</h3>
-                    <p className="font-body text-xs text-outline">{text.recentScansDesc}</p>
-                  </div>
-                  <button 
-                    onClick={() => setCurrentView('history')}
-                    className="text-primary font-label text-xs uppercase font-semibold tracking-wider hover:underline"
-                  >
-                    {text.viewAll}
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {history.slice(0, 3).map((scan) => (
-                    <div 
-                      key={scan.id}
-                      onClick={() => { setLastScan(scan); setCurrentView('result'); }}
-                      className="flex items-center gap-4 p-3 bg-surface-container rounded-xl hover:bg-surface-container-high transition-colors group cursor-pointer"
-                    >
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-surface-container-lowest flex-shrink-0">
-                        {getPreviewUrl(scan) ? (
-                          <img 
-                            src={getPreviewUrl(scan)} 
-                            alt={scan.matches[0].label} 
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-surface-container-highest" />
-                        )}
-                      </div>
-                      <div className="flex-grow">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-headline font-bold text-sm">{scan.matches[0].label}</h4>
-                          <span className="label-sm px-2.5 py-1 rounded-md bg-tertiary/90 text-on-tertiary">
-                            {scan.matches[0].confidence}%
-                          </span>
-                        </div>
-                        <p className="body-md text-outline mt-1">
-                          {deviceLabel}: {scan.device || 'Unknown'} | {timeLabel}: {formatToMinute(scan.timestamp)}
-                        </p>
-                        {scan.note && (
-                          <p className="body-md text-on-surface-variant mt-1">
-                            {noteLabel}: {scan.note}
-                          </p>
-                        )}
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-outline group-hover:text-primary transition-colors" />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </motion.div>
-          )}
-
-          {currentView === 'scan' && (
-            <motion.div
-              key="scan"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-5"
-            >
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={() => { stopCamera(); setCurrentView('home'); }}
-                  className="p-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors"
-                >
-                  <ChevronRight className="w-6 h-6 rotate-180" />
-                </button>
-                <h2 className="font-headline font-extrabold text-2xl">{text.appName}</h2>
-                <div className="w-10" />
-              </div>
-
-              <div className="relative rounded-2xl overflow-hidden bg-surface-container-low border border-outline-variant/20">
-                <div className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full bg-black/45 text-[10px] tracking-[0.2em] uppercase">{cameraStream ? scanText.liveScanner : scanText.scanWorkspace}</div>
-                {cameraStream && (
-                  <button
-                    onClick={toggleFlash}
-                    className={`absolute top-4 right-4 z-20 w-11 h-11 rounded-full flex items-center justify-center transition-colors ${isFlashOn ? 'bg-tertiary text-on-tertiary' : 'bg-black/45 text-white'}`}
-                  >
-                    <Zap className="w-5 h-5" />
-                  </button>
-                )}
-
-                <div className="aspect-[4/5] relative">
-                  {cameraStream ? (
-                    <video 
-                      autoPlay 
-                      playsInline 
-                      ref={(el) => {
-                        scanVideoRef.current = el;
-                        if (el && cameraStream) el.srcObject = cameraStream;
-                      }}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={scanDraftImage || 'https://images.unsplash.com/photo-1616627452934-67e61d9ee3b7?q=80&w=1200&auto=format&fit=crop'}
-                      alt="Scan Preview"
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  )}
-                  <div className="absolute inset-0 pointer-events-none">
-                    <div
-                      className="absolute border border-primary/45 rounded-xl"
-                      style={{
-                        left: `${scanFrame.xPct * 100}%`,
-                        top: `${scanFrame.yPct * 100}%`,
-                        width: `${scanFrame.widthPct * 100}%`,
-                        height: `${scanFrame.heightPct * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-black/45 backdrop-blur-sm text-center">
-                    <p className="text-xs uppercase tracking-widest text-primary">{scanText.optimalDistance}</p>
-                    <p className="text-sm text-on-surface-variant">{scanText.distanceGuide}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <button 
-                  onClick={cameraStream ? captureImage : startCamera}
-                  className="py-4 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-headline font-bold text-base flex items-center justify-center gap-2"
-                >
-                  <Camera className="w-5 h-5" />
-                  {cameraStream ? scanText.capture : scanText.takePhoto}
-                </button>
-                <label className="py-4 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-headline font-bold text-base flex items-center justify-center gap-2 cursor-pointer">
-                  <ImageIcon className="w-5 h-5" />
-                  {scanText.gallery}
-                  <input type="file" className="hidden" accept="image/*" onChange={handleScanFileUpload} />
-                </label>
-              </div>
-
-              {cameraStream && (
-                <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="font-headline font-bold text-base">{scanText.frameSize}</p>
-                    <p className="text-sm text-on-surface-variant">{Math.round(frameScale * 100)}%</p>
-                  </div>
-                  <input
-                    type="range"
-                    min={FRAME_SCALE_MIN}
-                    max={FRAME_SCALE_MAX}
-                    step={FRAME_SCALE_STEP}
-                    value={frameScale}
-                    onChange={(e) => setFrameScale(Number(e.target.value))}
-                    className="w-full accent-primary"
-                  />
-                </div>
-              )}
-
-              <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/15">
-                <p className="font-headline font-bold text-base">{scanText.qualityTipTitle}</p>
-                <p className="text-sm text-on-surface-variant mt-1">{scanText.qualityTipBody}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={retakePhoto}
-                  disabled={!scanDraftImage}
-                  className="py-4 rounded-xl bg-surface-container-high text-on-surface font-headline font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                  {scanText.retake}
-                </button>
-                <button
-                  onClick={startAnalysisFromScan}
-                  disabled={!scanDraftImage || isScanning}
-                  className="py-4 rounded-xl bg-primary text-on-primary font-headline font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <Play className="w-5 h-5" />
-                  {scanText.startAnalysis}
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {currentView === 'result' && (
-            <motion.div
-              key="result"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.05 }}
-              className="space-y-8"
-            >
-              <div className="flex items-center justify-between">
-                <button 
-                  onClick={() => setCurrentView('home')}
-                  className="p-2 hover:bg-surface-container-high rounded-lg"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-                <h2 className="headline-sm mt-4">{text.analysisResult}</h2>
-                <div className="w-10" />
-              </div>
-
-              <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-6 relative overflow-hidden">
-                <div className="absolute -right-20 -bottom-24 w-72 h-72 rounded-full border-[18px] border-primary/10 pointer-events-none" />
-                {isScanning ? (
-                  <div className="space-y-6">
-                    <div className="relative rounded-2xl overflow-hidden border border-primary/30">
-                      <img
-                        src={scanDraftImage || lastScan?.imageUrl || 'https://images.unsplash.com/photo-1616627452934-67e61d9ee3b7?q=80&w=1200&auto=format&fit=crop'}
-                        alt="Processing"
-                        className="w-full aspect-[4/5] object-cover opacity-60"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/50" />
-                      <div className="absolute top-5 left-5">
-                        <p className="label-sm text-primary">Sensor Active</p>
-                        <p className="body-md text-on-surface-variant mt-1">ISO 100 | Macro 1:1</p>
-                      </div>
-                      <div className="absolute top-16 left-5 right-5 h-px bg-primary/40" />
-                      <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-primary/80 rounded-tl-md" />
-                      <div className="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-primary/80 rounded-tr-md" />
-                      <div className="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-primary/80 rounded-bl-md" />
-                      <div className="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-primary/80 rounded-br-md" />
-                    </div>
-
-                    <div>
-                      <h3 className="font-headline font-extrabold text-4xl leading-[0.95] tracking-tight">
-                        {resultText.processingTitle}
-                      </h3>
-                      <p className="body-md text-on-surface-variant mt-3">
-                        {resultText.processingBody}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-[84px_1fr] gap-4 items-center">
-                      <div className="relative w-[84px] h-[84px]">
-                        <svg className="w-[84px] h-[84px] -rotate-90" viewBox="0 0 84 84">
-                          <circle cx="42" cy="42" r="36" stroke="currentColor" strokeWidth="6" className="text-surface-container-highest" fill="none" />
-                          <circle
-                            cx="42"
-                            cy="42"
-                            r="36"
-                            stroke="currentColor"
-                            strokeWidth="6"
-                            className="text-primary transition-all duration-500"
-                            fill="none"
-                            strokeDasharray={2 * Math.PI * 36}
-                            strokeDashoffset={(2 * Math.PI * 36) * (1 - analysisProgress / 100)}
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center font-headline font-bold text-2xl text-primary">
-                          {Math.round(analysisProgress)}%
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="label-sm text-outline">{resultText.neuralLoad}</p>
-                          <p className="body-md font-semibold text-primary">{resultText.optimizing}</p>
-                        </div>
-                        <div className="h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${analysisProgress}%` }}
-                            transition={{ duration: 0.3 }}
-                            className="h-full bg-primary"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl bg-black/25 border border-outline-variant/30 p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <p className={`body-md ${stage1Done ? 'text-on-surface' : 'text-on-surface-variant'}`}>{resultText.stage1}</p>
-                        {stage1Done ? <CheckCircle2 className="w-5 h-5 text-tertiary" /> : <Loader2 className="w-5 h-5 animate-spin text-outline" />}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className={`body-md ${stage2Done ? 'text-on-surface' : 'text-on-surface-variant'}`}>{resultText.stage2}</p>
-                        {stage2Done ? <CheckCircle2 className="w-5 h-5 text-tertiary" /> : <Circle className="w-5 h-5 text-outline" />}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className={`body-md ${stage3Done ? 'text-on-surface' : 'text-on-surface-variant'}`}>{resultText.stage3}</p>
-                        {stage3Done ? <CheckCircle2 className="w-5 h-5 text-tertiary" /> : <Hourglass className="w-5 h-5 text-outline" />}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="rounded-xl bg-black/25 border border-outline-variant/20 p-2.5">
-                        <p className="label-sm text-primary">{resultText.qualityHigh}</p>
-                      </div>
-                      <div className="rounded-xl bg-black/25 border border-outline-variant/20 p-2.5 flex items-center gap-2">
-                        <Database className="w-4 h-4 text-primary" />
-                        <p className="label-sm text-on-surface-variant">{resultText.aiConfidenceMetric}: {(pseudoConfidence / 100).toFixed(2)}</p>
-                      </div>
-                      <div className="rounded-xl bg-black/25 border border-outline-variant/20 p-2.5 flex items-center gap-2">
-                        <Cpu className="w-4 h-4 text-primary" />
-                        <p className="label-sm text-on-surface-variant">{resultText.latency}: {pseudoLatency}ms</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : bestMatch ? (
-                  <>
-                    <div className="flex items-start justify-between gap-4">
-                      <span className="label-sm px-4 py-2 rounded-full bg-tertiary text-on-tertiary">{resultText.bestMatch}</span>
-                      <div className="text-right">
-                        <p className="label-sm text-outline">{resultText.aiConfidence}</p>
-                        <p className="headline-sm text-primary mt-1">{bestMatch.confidence}%</p>
-                      </div>
-                    </div>
-                    <h3 className="headline-sm mt-8 tracking-tight break-words">{bestMatch.label}</h3>
-                  </>
-                ) : null}
-              </div>
-
-              {!isScanning && lastScan && (
-              <section className="space-y-3">
-                <h3 className="headline-sm mt-4">{resultText.visualVerification}</h3>
-                <div className="grid grid-cols-2 gap-3 bg-surface-container-low border border-outline-variant/20 rounded-2xl p-3">
-                  <button
-                    onClick={() => lastScan?.imageUrl && setPreviewImage({ src: lastScan.imageUrl, title: resultText.yourScan })}
-                    className="rounded-xl overflow-hidden bg-surface-container-high relative group"
-                  >
-                    {lastScan?.imageUrl ? (
-                      <img src={lastScan.imageUrl} alt={resultText.yourScan} className="w-full h-36 object-cover group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className="w-full h-36 flex items-center justify-center body-md text-outline">{resultText.noReference}</div>
-                    )}
-                    <span className="label-sm absolute bottom-2 left-2 px-3 py-1 rounded-md bg-black/50 text-on-background">{resultText.yourScan}</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      const ref = bestMatch ? getMatchReferenceUrl(bestMatch as any) : '';
-                      if (ref) setPreviewImage({ src: ref, title: resultText.reference });
-                    }}
-                    className="rounded-xl overflow-hidden bg-surface-container-high relative group"
-                  >
-                    {bestMatch && getMatchReferenceUrl(bestMatch as any) ? (
-                      <img src={getMatchReferenceUrl(bestMatch as any)} alt={resultText.reference} className="w-full h-36 object-cover group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className="w-full h-36 flex items-center justify-center body-md text-outline">{resultText.noReference}</div>
-                    )}
-                    <span className="label-sm absolute bottom-2 left-2 px-3 py-1 rounded-md bg-black/50 text-on-background">{resultText.reference}</span>
-                  </button>
-                </div>
-                <p className="label-sm text-outline">{resultText.tapToZoom}</p>
-              </section>
-              )}
-
-              {!isScanning && lastScan && (
-              <section className="space-y-3">
-                <h3 className="headline-sm mt-4">{resultText.top3Similar}</h3>
-                <div className="space-y-3">
-                  {similarMatches.map((match, idx) => (
-                    <div key={idx} className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15">
-                      <div className="flex gap-4">
-                        <button
-                          onClick={() => {
-                            const ref = getMatchReferenceUrl(match as any);
-                            if (ref) setPreviewImage({ src: ref, title: match.label });
-                          }}
-                          className="w-24 h-24 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0"
-                        >
-                          {getMatchReferenceUrl(match as any) ? (
-                            <img
-                              src={getMatchReferenceUrl(match as any)}
-                              alt={match.label}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform"
-                              referrerPolicy="no-referrer"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center body-md text-outline">{resultText.noReference}</div>
-                          )}
-                        </button>
-                        <div className="flex-grow">
-                          <div className="flex justify-between items-center mb-2 gap-3">
-                            <h4 className="headline-sm tracking-tight break-words">{match.label}</h4>
-                            <span className="body-md font-semibold text-primary">{match.confidence}%</span>
-                          </div>
-                          <div className="h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${match.confidence}%` }}
-                              transition={{ duration: 1, delay: idx * 0.2 }}
-                              className="h-full bg-primary"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-              )}
-
-              {!isScanning && lastScan && (
-                <div className="space-y-6">
-                  <button 
-                    onClick={() => setCurrentView('home')}
-                    className="w-full py-4 rounded-lg bg-surface-container-high font-headline font-bold text-on-surface hover:bg-surface-variant transition-colors"
-                  >
-                    {text.done}
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {currentView === 'history' && (
-            <motion.div
-              key="history"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-6"
-            >
-              <div>
-                <p className="label-sm text-primary/80">{text.archive}</p>
-                <h2 className="font-headline font-bold text-4xl tracking-tight mt-2">{text.scanHistory}</h2>
-              </div>
-
-              <div className="relative">
-                <Search className="w-5 h-5 text-outline absolute left-4 top-1/2 -translate-y-1/2" />
-                <input
-                  value={historySearch}
-                  onChange={(e) => setHistorySearch(e.target.value)}
-                  placeholder={text.searchHistory}
-                  className="w-full pl-12 pr-4 py-4 rounded-2xl bg-black/35 border border-outline-variant/25 body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={toggleSelectAllHistory}
-                  className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors"
-                >
-                  {allVisibleSelected ? clearSelectLabel : selectAllLabel}
-                </button>
-                <button
-                  onClick={() => void deleteSelectedHistory()}
-                  disabled={!selectedHistoryIds.length}
-                  className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {deleteSelectedLabel} ({selectedHistoryIds.length})
-                </button>
-                <button
-                  onClick={() => {
-                    if (!history.length) return;
-                    if (!window.confirm(text.clearConfirm)) return;
-                    const previousHistory = history;
-                    setHistory([]);
-                    setSelectedHistoryIds([]);
-                    localStorage.removeItem(HISTORY_STORAGE_KEY);
-                    if (historySyncMode !== 'server') return;
-                    void (async () => {
-                      try {
-                        const res = await fetch(historyEndpoint, { method: 'DELETE' });
-                        if (!res.ok) throw new Error(`DELETE all failed: ${res.status}`);
-                        await refreshHistoryFromServer();
-                      } catch {
-                        setHistory(previousHistory);
-                        alert(deleteFailedMsg);
-                      }
-                    })();
-                  }}
-                  className="text-xs px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors font-label uppercase tracking-wider text-on-surface-variant"
-                >
-                  {text.clearHistory}
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {filteredHistory.map((scan) => (
-                  <div 
-                    key={scan.id}
-                    onClick={() => { setLastScan(scan); setCurrentView('result'); }}
-                    className="relative flex items-center gap-3 p-3 bg-surface-container rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high transition-colors cursor-pointer"
-                  >
-                    <span className="absolute top-2.5 right-2.5 label-sm px-2.5 py-1 rounded-lg bg-tertiary/95 text-on-tertiary text-xs">
-                      {scan.matches[0].confidence}%
-                    </span>
-                    <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
-                      {getPreviewUrl(scan) ? (
-                        <img src={getPreviewUrl(scan)} alt={scan.matches[0].label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        <div className="w-full h-full bg-surface-container-highest" />
-                      )}
-                    </div>
-                    <div className="flex-grow min-w-0 min-h-24 flex flex-col justify-center pr-24 pb-8 relative">
-                      <h4 className="font-headline font-bold text-lg leading-tight pr-10 line-clamp-1">{scan.matches[0].label}</h4>
-                      <div className="mt-1.5 space-y-1">
-                        <p className="text-sm text-outline flex items-center gap-2 whitespace-nowrap">
-                          <CalendarDays className="w-4 h-4" />
-                          {formatHistoryDate(scan.timestamp)}
-                        </p>
-                        <p className="text-sm text-outline flex items-center gap-2 whitespace-nowrap">
-                          <Clock3 className="w-4 h-4" />
-                          {formatHistoryTime(scan.timestamp)}
-                        </p>
-                      </div>
-                      {scan.note && (
-                        <p className="text-xs text-on-surface-variant mt-1.5 line-clamp-1">
-                          {noteLabel}: {scan.note}
-                        </p>
-                      )}
-                      <div className="absolute right-0 bottom-0 flex items-center justify-end gap-1.5 pr-0">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              editHistoryNote(scan.id);
-                            }}
-                            className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-surface-variant transition-colors"
-                          >
-                            {editNoteLabel}
-                          </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void deleteHistoryItem(scan.id);
-                          }}
-                          className="text-[10px] px-2 py-1 rounded bg-surface-container-high hover:bg-red-500/20 transition-colors"
-                        >
-                            {deleteItemLabel}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleHistorySelection(scan.id);
-                            }}
-                            className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
-                              selectedHistoryIds.includes(scan.id)
-                                ? 'bg-primary border-primary text-on-primary'
-                                : 'bg-[#2a2a2a] border-[#3a3a3a] text-transparent'
-                            }`}
-                            title={deleteSelectedLabel}
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-outline self-center ml-0.5" />
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="rounded-2xl bg-black/35 border border-outline-variant/20 p-5">
-                  <p className="label-sm text-on-surface-variant">{text.totalScans}</p>
-                  <p className="font-headline font-extrabold text-5xl text-primary mt-2">{history.length}</p>
-                </div>
-                <div className="rounded-2xl bg-black/35 border border-outline-variant/20 p-5">
-                  <p className="label-sm text-on-surface-variant">{text.avgAccuracy}</p>
-                  <p className="font-headline font-extrabold text-5xl text-tertiary mt-2">{Math.round(avgAccuracy)}%</p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {currentView === 'profile' && (
-            <motion.div
-              key="profile"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-6"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-primary">
-                  <Menu className="w-5 h-5" />
-                </div>
-                <button className="p-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors">
-                  <Bell className="w-5 h-5" />
-                </button>
-              </div>
-
-              <section className="rounded-3xl bg-surface-container-low border border-outline-variant/20 p-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden border border-outline-variant/30">
-                    <img src="/images/avatar.svg" alt="Profile Avatar" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-grow">
-                    <h3 className="font-headline font-bold text-2xl leading-tight">{text.profileUserName}</h3>
-                    <p className="body-md text-on-surface-variant">{text.profileUserEmail}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="label-sm px-2 py-1 rounded-md bg-primary/20 text-primary">{text.profileRole}</span>
-                      <span className="label-sm px-2 py-1 rounded-md bg-tertiary/20 text-tertiary">{historySyncMode === 'server' ? text.serverMode : text.localMode}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-outline-variant/20">
-                  <p className="body-md text-on-surface-variant">{historySyncMode === 'server' ? text.connected : text.profileStatus}</p>
-                  <button className="label-sm text-primary flex items-center gap-1">
-                    <Pencil className="w-3.5 h-3.5" />
-                    {text.editProfile}
-                  </button>
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <p className="label-sm text-outline">{text.performanceAnalytics}</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4">
-                    <p className="label-sm text-outline">{text.totalScansCard}</p>
-                    <p className="font-headline font-extrabold text-4xl mt-1">{history.length}</p>
-                  </div>
-                  <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4">
-                    <p className="label-sm text-outline">{text.avgConfCard}</p>
-                    <p className="font-headline font-extrabold text-4xl text-primary mt-1">{avgAccuracy.toFixed(1)}%</p>
-                  </div>
-                  <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4">
-                    <p className="label-sm text-outline">{text.thisWeekCard}</p>
-                    <p className="font-headline font-extrabold text-4xl mt-1">{thisWeekScans}</p>
-                  </div>
-                  <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4">
-                    <p className="label-sm text-outline">{text.lastScanCard}</p>
-                    <p className="font-headline font-extrabold text-3xl mt-1">{lastScanTimeAgo}</p>
-                  </div>
-                </div>
-                <div className="rounded-xl bg-surface-container-low border border-outline-variant/20 p-3 flex items-center justify-between">
-                  <p className="body-md text-on-surface-variant">{text.mostIdentified}</p>
-                  <p className="body-md font-semibold text-primary">{mostIdentifiedLabel}</p>
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <p className="label-sm text-outline">{text.appPreferences}</p>
-                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 divide-y divide-outline-variant/20">
-                  <ChoiceRow
-                    label={text.prefTheme}
-                    options={[
-                      { key: 'dark', label: text.themeDark },
-                      { key: 'light', label: text.themeLight },
-                    ]}
-                    activeKey={theme}
-                    onSelect={(key) => setTheme(key as Theme)}
-                  />
-                  <ChoiceRow
-                    label={text.prefLanguage}
-                    options={[
-                      { key: 'zh', label: text.langZh },
-                      { key: 'en', label: text.langEn },
-                    ]}
-                    activeKey={language}
-                    onSelect={(key) => setLanguage(key as Language)}
-                  />
-                  <ChoiceRow
-                    label={text.prefSort}
-                    options={[
-                      { key: 'newest', label: text.sortNewest },
-                      { key: 'confidence', label: text.sortConfidence },
-                      { key: 'name', label: text.sortName },
-                    ]}
-                    activeKey={defaultSort}
-                    onSelect={(key) => setDefaultSort(key as 'newest' | 'confidence' | 'name')}
-                  />
-                  <ToggleRow label={text.prefAutoSave} enabled={autoSaveHistory} onToggle={() => setAutoSaveHistory((v) => !v)} />
-                  <ToggleRow label={text.prefHdPreview} enabled={hdPreviewEnabled} onToggle={() => setHdPreviewEnabled((v) => !v)} />
-                  <ToggleRow label={text.prefHaptic} enabled={hapticFeedbackEnabled} onToggle={() => setHapticFeedbackEnabled((v) => !v)} />
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <p className="label-sm text-outline">{text.infraSync}</p>
-                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="label-sm text-outline">{text.historyMode}</p>
-                      <p className="body-md font-semibold">{historySyncMode === 'server' ? text.serverModeShort : text.localModeShort}</p>
-                    </div>
-                    <div>
-                      <p className="label-sm text-outline">{text.connection}</p>
-                      <p className={`body-md font-semibold flex items-center gap-1 ${historySyncMode === 'server' ? 'text-tertiary' : 'text-outline'}`}>
-                        {historySyncMode === 'server' ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
-                        {historySyncMode === 'server' ? text.connected : text.offline}
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="label-sm text-outline">{text.backendUrl}</p>
-                    <p className="body-md break-all">{apiBaseUrl || window.location.origin}</p>
-                  </div>
-                  <div>
-                    <p className="label-sm text-outline">{text.syncStatus}</p>
-                    <p className="body-md">{lastSyncAt ? `${text.upToDate} • ${formatToMinute(lastSyncAt)}` : text.offline}</p>
-                  </div>
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <p className="label-sm text-outline">{text.dataManagement}</p>
-                <button className="w-full py-3 rounded-xl bg-surface-container-low border border-outline-variant/20 label-sm hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
-                  <Download className="w-4 h-4" />
-                  {text.exportHistory}
-                </button>
-                <button className="w-full py-3 rounded-xl bg-surface-container-low border border-outline-variant/20 label-sm hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
-                  <RefreshCw className="w-4 h-4" />
-                  {text.syncToServer}
-                </button>
-                <button className="w-full py-3 rounded-xl bg-surface-container-low border border-outline-variant/20 label-sm hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2">
-                  <Trash2 className="w-4 h-4" />
-                  {text.clearLocalCache}
-                </button>
-              </section>
-
-              <section className="space-y-3">
-                <p className="label-sm text-outline">{text.preferencesProfile}</p>
-                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-3">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="label-sm px-2 py-1 rounded-md bg-primary/15 text-primary">{mostIdentifiedLabel}</span>
-                    <span className="label-sm px-2 py-1 rounded-md bg-tertiary/15 text-tertiary">{text.highConfidenceRate}: {highConfidenceRate}%</span>
-                    <span className="label-sm px-2 py-1 rounded-md bg-surface-container-high text-on-surface-variant">{text.favorites}: 0</span>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="label-sm text-outline">{text.recentSummaries}</p>
-                    {history.slice(0, 3).map((item) => (
-                      <div key={item.id} className="rounded-lg bg-surface-container-high p-2">
-                        <p className="body-md line-clamp-1">{item.matches?.[0]?.label || 'Unknown'} - {item.matches?.[0]?.confidence || 0}%</p>
-                      </div>
-                    ))}
-                    {!history.length && <p className="body-md text-outline">{text.noRecordsYet}</p>}
-                  </div>
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <p className="label-sm text-outline">{text.environment}</p>
-                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="body-md text-on-surface-variant">{text.device}</p>
-                    <p className="body-md flex items-center gap-1">{/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent || '') ? <Smartphone className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}{currentDevice}</p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="body-md text-on-surface-variant">{text.cameraGallery}</p>
-                    <p className="body-md text-primary">{cameraPermissionLabel}</p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="body-md text-on-surface-variant">{text.deployment}</p>
-                    <p className="body-md">{deploymentLabel}</p>
-                  </div>
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <p className="label-sm text-outline">{text.security}</p>
-                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="body-md flex items-center gap-2"><Shield className="w-4 h-4" /> {text.sessionActive}</p>
-                    <span className="label-sm px-2 py-1 rounded-md bg-primary/20 text-primary">{text.twoFaEnabled}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-on-surface-variant">
-                    <p className="body-md flex items-center gap-2"><Lock className="w-4 h-4" /> {text.teamAccess}</p>
-                    <Lock className="w-4 h-4" />
-                  </div>
-                </div>
-              </section>
-
-              <section className="space-y-3 pb-4">
-                <p className="label-sm text-outline">{text.aboutApp}</p>
-                <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-4 space-y-2">
-                  <p className="body-md">{text.appVersion}: v2.1.0</p>
-                  <p className="body-md">{text.modelVersion}: v4.2</p>
-                  <p className="body-md">{text.buildNumber}: 2026.03.25</p>
-                  <p className="body-md text-outline flex items-center gap-1"><Info className="w-4 h-4" /> {text.privacyPolicy}</p>
-                </div>
-                <button className="w-full py-4 rounded-2xl bg-[#E9A79F] text-[#351d16] label-sm hover:brightness-95 transition-all flex items-center justify-center gap-2">
-                  <LogOut className="w-4 h-4" />
-                  {text.logout}
-                </button>
-              </section>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-
-      {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 w-full z-40 px-4 pb-6 pt-2 bg-background/60 backdrop-blur-xl border-t border-outline-variant/10">
-        <div className="max-w-2xl mx-auto flex justify-around items-center">
-          <NavItem 
-            active={currentView === 'home'} 
-            onClick={() => setCurrentView('home')} 
-            icon={<Home className={currentView === 'home' ? 'fill-current' : ''} />} 
-            label={text.navHome} 
-          />
-          <NavItem 
-            active={currentView === 'scan'} 
-            onClick={openScanWorkspace} 
-            icon={<Camera />} 
-            label={text.navScan} 
-          />
-          <NavItem 
-            active={currentView === 'history'} 
-            onClick={() => setCurrentView('history')} 
-            icon={<History />} 
-            label={text.navHistory} 
-          />
-          <NavItem 
-            active={currentView === 'profile'} 
-            onClick={() => setCurrentView('profile')} 
-            icon={<User />} 
-            label={text.navProfile} 
-          />
-        </div>
-      </nav>
-
-      <AnimatePresence>
-        {previewImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setPreviewImage(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="max-w-5xl w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <p className="headline-sm">{previewImage.title}</p>
-                <button
-                  onClick={() => setPreviewImage(null)}
-                  className="p-2 rounded-lg bg-surface-container-high hover:bg-surface-variant transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="rounded-2xl overflow-hidden border border-outline-variant/20 bg-surface-container-low">
-                <img
-                  src={previewImage.src}
-                  alt={previewImage.title}
-                  className="w-full max-h-[80vh] object-contain"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex flex-col items-center justify-center transition-all duration-300 active:scale-90 ${active ? 'text-primary scale-110' : 'text-on-surface/60'}`}
-    >
-      <div className="w-6 h-6 flex items-center justify-center">
-        {React.cloneElement(icon as React.ReactElement, { size: 24 })}
+  const materialCard = (material: Material) => <article className="material-card" key={material.id}>
+    <button className="material-image" onClick={() => openPreview(material.image, material.id)} aria-label={`${t('Enlarge', '放大')} ${material.id}`}><img src={material.thumbnail} srcSet={`${material.thumbnail} 360w, ${material.image} 640w`} sizes="(max-width: 699px) 43vw, (max-width: 959px) 32vw, 24vw" alt={`${material.id} ${t('leather reference texture', '皮革参考纹理')}`} loading="lazy" width="640" height="640" /><span><Expand size={18} /></span></button>
+    <div className="material-meta"><div><strong>{material.id}</strong><span>{material.samples} {t(material.samples === 1 ? 'reference image' : 'reference images', '张参考图像')}</span></div><button className={`icon-button favorite ${favorites.includes(material.id) ? 'selected' : ''}`} aria-label={`${favorites.includes(material.id) ? t('Unfavorite', '取消收藏') : t('Favorite', '收藏')} ${material.id}`} aria-pressed={favorites.includes(material.id)} onClick={() => toggleFavorite(material.id)}><Star size={18} /></button></div>
+  </article>;
+  return <MotionConfig reducedMotion="user"><div className="app-shell">
+    <a href="#main" className="skip-link" onClick={event => { event.preventDefault(); document.getElementById('main')?.focus(); }}>{t('Skip to content', '跳转到主要内容')}</a>
+    <aside className={`sidebar ${menuOpen ? 'is-open' : ''}`} aria-label={t('Primary navigation', '主要导航')}>
+      <a className="brand" href="#overview" onClick={() => setMenuOpen(false)}><img src="/favicon.svg" width="38" height="38" alt="" /><span>LeatherMind<small>{t('Material intelligence', '皮革材质识别')}</small></span></a>
+      <nav>{views.map(target => { const Icon = navIcons[target]; return <a key={target} href={`#${target}`} onClick={() => setMenuOpen(false)} className={`nav-item ${view === target ? 'active' : ''}`} aria-current={view === target ? 'page' : undefined}><Icon size={19} /><span>{labels[target]}</span>{view === target && <span className="nav-active-mark" />}</a>; })}</nav>
+      <div className="sidebar-bottom"><div className="sidebar-study"><FlaskConical size={19} /><span>{t('Reference collection', '参考样本集合')}<strong>{materials.length} {t('texture classes', '个纹理类别')}</strong></span></div>
+        <div className="sidebar-controls"><button onClick={() => setLanguage(value => value === 'en' ? 'zh' : 'en')} aria-label={t('Switch to Chinese', 'Switch to English')}><span>{language === 'en' ? 'EN' : '中'}</span><span>{language === 'en' ? '中文' : 'English'}</span></button><button className="icon-button" onClick={() => setTheme(value => value === 'dark' ? 'light' : 'dark')} aria-label={theme === 'dark' ? t('Switch to light theme', '切换浅色主题') : t('Switch to dark theme', '切换深色主题')}>{theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}</button></div>
+        <a className="repository-link" href="https://github.com/YanYihann/Leather-Texture-Classifier" target="_blank" rel="noreferrer">{t('Research repository', '研究项目仓库')}<ArrowUpRight size={15} /></a>
       </div>
-      <span className="label-sm mt-1">{label}</span>
-    </button>
-  );
-}
+    </aside>
+    {menuOpen && <button className="sidebar-backdrop" aria-label={t('Close navigation', '关闭导航')} onClick={() => setMenuOpen(false)} />}
+    <div className="main-shell"><header className="topbar"><div className="topbar-location"><button className="icon-button mobile-menu" aria-label={t('Open navigation', '打开导航')} aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><Menu size={20} /></button><span>LeatherMind</span><span className="breadcrumb-slash">/</span><strong>{labels[view]}</strong></div><div className="connection-status"><span className={`status-dot ${health?.modelAvailable ? 'online' : ''}`} />{status}</div></header>
+      <main id="main" tabIndex={-1} className={`main-content view-${view}`}>
+        <input ref={inputRef} className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" aria-label={t('Upload a leather image', '上传皮革图片')} onChange={event => { void prepareFile(event.target.files?.[0]); event.target.value = ''; }} />
+        {notice && <div className="notice" role="alert"><CircleHelp size={19} /><span>{notice}</span><button className="icon-button" aria-label={t('Dismiss message', '关闭提示')} onClick={() => setNotice('')}><X size={18} /></button></div>}
+        {view === 'overview' && <>
+          <section className="overview-hero"><div className="hero-copy"><h1 ref={headingRef} tabIndex={-1}>{language === 'en' ? <>Leather<br />Texture<br /><span>Classification.</span></> : <>皮革纹理<br /><span>智能分类。</span></>}</h1>
+            <p className="hero-description">{t('Image-based material identification. Compare ranked predictions with a collection of 203 reference classes.', '基于图像的皮革材质识别。对照 203 个参考类别，分析模型候选结果。')}</p>
+            <div className="hero-actions"><button className="button primary" onClick={() => { navigate('classify'); inputRef.current?.click(); }} disabled={preparing}>{preparing ? <LoaderCircle className="spin" size={18} /> : <Upload size={18} />}{t('Upload a sample', '上传样本')}<ArrowUpRight size={18} /></button><button className="button secondary" onClick={() => void startCamera()}><Camera size={18} />{t('Use camera', '相机拍摄')}</button></div>
+            <div className="hero-method"><span><ShieldCheck size={17} />{t('Top-3 candidate comparison', 'Top-3 候选对比')}</span><span><FolderOpen size={17} />{t('Reference-backed analysis', '参考样本对照分析')}</span></div>
+            <button className="text-button hero-library-link" onClick={() => navigate('archive')}>{t('Explore the material archive', '浏览材质档案')}<ArrowDown size={16} /></button>
+          </div><MaterialVisual t={t} open={openPreview} /></section>
+          <section className="featured-section"><div className="section-head"><h2>{t('Reference materials', '参考材质')}</h2><button className="text-button" onClick={() => navigate('archive')}>{t('View collection', '查看集合')}<ArrowUpRight size={18} /></button></div><div className="material-grid featured-grid">{featured.map(materialCard)}</div></section>
+          <section className="workflow-section"><h2>{t('From image to identification', '从图像到识别结果')}</h2><div className="workflow-list">{[[Upload, 'Upload or capture', '上传或拍摄', 'Use a well-lit close-up with the texture in focus.', '使用光线均匀、纹理清晰的近摄图像。'], [FlaskConical, 'Classify the texture', '分类纹理', 'The model ranks the three strongest candidate classes.', '模型按置信度返回三个最匹配的类别。'], [Database, 'Compare and document', '比对与记录', 'Inspect reference images and annotate your results.', '对照参考图像并为识别结果添加备注。']].map(([Icon, en, zh, descEn, descZh], index) => { const StepIcon = Icon as typeof Upload; return <div className="workflow-step" key={index}><StepIcon size={22} /><h3>{t(en as string, zh as string)}</h3><p>{t(descEn as string, descZh as string)}</p></div>; })}</div></section>
+          {scans.length > 0 && <section className="recent-section"><div className="section-head"><h2>{t('Recent classifications', '最近识别')}</h2><button className="text-button" onClick={() => navigate('history')}>{t('View history', '查看历史')}<ArrowUpRight size={18} /></button></div>{scans.slice(0, 3).map(scan => <button className="recent-row" key={scan.id} onClick={() => { setResult(scan); setDraft(scan.imageUrl); setMatchIndex(0); navigate('classify'); }}><img src={scan.imageUrl} alt="" width="64" height="64" /><strong>{scan.matches[0].label}</strong><span>{date(scan.timestamp)}</span><span className="confidence-value">{scan.matches[0].confidence.toFixed(2)}%</span><ArrowUpRight size={18} /></button>)}</section>}
+        </>}
 
-function ChoiceRow({
-  label,
-  options,
-  activeKey,
-  onSelect,
-}: {
-  label: string;
-  options: Array<{ key: string; label: string }>;
-  activeKey: string;
-  onSelect: (key: string) => void;
-}) {
-  return (
-    <div className="p-4 space-y-2">
-      <p className="body-md">{label}</p>
-      <div className="flex flex-wrap gap-2">
-        {options.map((opt) => (
-          <button
-            key={opt.key}
-            onClick={() => onSelect(opt.key)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              activeKey === opt.key
-                ? 'bg-primary text-on-primary'
-                : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+        {view === 'classify' && <>
+          <div className="page-heading"><h1 ref={headingRef} tabIndex={-1}>{t('Texture classification', '纹理分类')}</h1><p>{t('Upload a sample, run inference, and inspect the three highest-ranked reference classes.', '上传样本、运行推理，对照置信度最高的三个参考类别。')}</p></div>
+          <div className="classification-layout"><section className="workspace-panel"><div className="panel-head"><h2>{t('Input specimen', '输入样本')}</h2><span>{draft ? t('Ready for analysis', '可开始分析') : t('Image acquisition', '图像采集')}</span></div>
+            <div className={`input-stage ${draft || cameraStream ? 'has-image' : ''}`} onDragOver={event => { event.preventDefault(); if (!busy) event.currentTarget.classList.add('drag-over'); }} onDragLeave={event => event.currentTarget.classList.remove('drag-over')} onDrop={event => { event.preventDefault(); event.currentTarget.classList.remove('drag-over'); void prepareFile(event.dataTransfer.files[0]); }}>
+              {cameraStream ? <><video ref={videoRef} autoPlay muted playsInline style={{ transform: `scale(${zoom})` }} /><div className="camera-reticle" aria-hidden="true" /></> : draft ? <><button className="input-preview" onClick={() => openPreview(draft, fileName || t('Input specimen', '输入样本'))}><img src={draft} alt={t('Uploaded leather specimen', '已上传的皮革样本')} /><span><ZoomIn size={18} />{t('Inspect image', '查看图像')}</span></button>{busy && <div className="scan-indicator" aria-hidden="true" />}</> : <div className="upload-empty"><ImagePlus size={44} strokeWidth={1.2} /><h3>{t('Add a leather sample', '添加皮革样本')}</h3><p>{t('Drag an image here, or select a file.', '将图片拖入此处，或选择文件。')}</p><button className="button primary" onClick={() => inputRef.current?.click()} disabled={preparing || cameraLoading}>{preparing ? <LoaderCircle size={18} className="spin" /> : <Upload size={18} />}{t('Choose image', '选择图片')}</button><button className="text-button" onClick={() => void startCamera()} disabled={cameraLoading}>{cameraLoading ? <LoaderCircle size={16} className="spin" /> : <Camera size={16} />}{t('Capture with camera', '使用相机拍摄')}</button><span className="file-formats">JPG / PNG / WEBP · {t('Up to 15 MB', '最大 15 MB')}</span></div>}
+            </div>
+            {cameraStream ? <div className="camera-controls"><label><ZoomIn size={17} />{t('Zoom', '缩放')}<input type="range" min="1" max="3" step=".1" value={zoom} onChange={event => setZoom(Number(event.target.value))} /><span>{zoom.toFixed(1)}×</span></label><div><button className="button secondary" onClick={stopCamera}>{t('Close camera', '关闭相机')}</button><button className="button primary" onClick={capture}><Camera size={18} />{t('Capture sample', '拍摄样本')}</button></div></div> : <div className="input-toolbar"><span>{fileName || t('No image selected', '尚未选择图片')}</span>{draft && <button className="text-button" disabled={busy || preparing} onClick={() => { setDraft(null); setResult(null); setFileName(''); }}>{t('Remove', '移除')}<X size={15} /></button>}</div>}
+            {!cameraStream && <div className="analysis-actions"><button className="button secondary" disabled={busy || preparing} onClick={() => inputRef.current?.click()}><Upload size={18} />{t('Replace image', '更换图片')}</button>{busy ? <button className="button secondary" onClick={cancelAnalysis}>{t('Cancel analysis', '取消分析')}<X size={18} /></button> : <button className="button primary" onClick={() => void analyze()} disabled={!draft || preparing}><FlaskConical size={18} />{t('Run classification', '开始分类')}<ArrowRight size={18} /></button>}</div>}
+          </section>
+          <section className="results-panel" aria-live="polite"><div className="panel-head"><h2>{t('Analysis results', '分析结果')}</h2><span>TOP 3</span></div>
+            {busy ? <div className="analysis-wait"><LoaderCircle size={34} className="spin" /><h3>{inferenceProgress?.stage === 'download' ? t('Loading classification model', '正在加载分类模型') : inferenceProgress?.stage === 'initialize' ? t('Initializing model', '正在初始化模型') : t('Running inference', '正在运行推理')}</h3><p>{inferenceProgress?.stage === 'download' ? t('The model loads on first use and is cached on this device when storage permits.', '首次使用需下载模型，存储空间允许时会缓存在此设备。') : t('Extracting texture features and ranking candidate classes.', '正在提取纹理特征并计算候选类别。')}</p>{inferenceProgress?.stage === 'download' && <div className="download-progress"><progress aria-label={t('Model download progress', '模型下载进度')} value={inferenceProgress.received} max={inferenceProgress.total} /><span>{((inferenceProgress.received || 0) / 1000000).toFixed(1)} / {((inferenceProgress.total || 0) / 1000000).toFixed(1)} MB</span></div>}<span>{elapsed}s {t('elapsed', '已等待')}{elapsed >= 20 ? t(' · First inference may take longer.', ' · 首次推理可能需要更久。') : ''}</span></div> : result ? <>
+              <div className="result-summary"><span>{t('Highest-ranked class', '最匹配类别')}</span><h3>{result.matches[0].label}</h3><strong>{result.matches[0].confidence.toFixed(2)}<small>%</small></strong><span>{t('Model confidence', '模型置信度')}</span></div>
+              <div className="match-list" role="group" aria-label={t('Compare classification candidates', '对比分类候选')}>
+                {result.matches.map((match, index) => <button key={`${match.label}-${index}`} className={`match-option ${index === matchIndex ? 'selected' : ''}`} aria-pressed={index === matchIndex} onClick={() => setMatchIndex(index)}><span className="rank">{String(index + 1).padStart(2, '0')}</span><strong>{match.label}</strong><span>{match.confidence.toFixed(2)}%</span><ChevronRight size={17} /></button>)}
+              </div>
+              <div className="reference-head"><h3>{t('Reference comparison', '参考图对比')}</h3><span>{currentMatch?.label}</span></div><div className="comparison-images"><button onClick={() => openPreview(draft || result.imageUrl, t('Input specimen', '输入样本'))}><img src={result.imageUrl} alt={t('Input specimen', '输入样本')} /><span>{t('Input specimen', '输入样本')}</span></button>{reference ? <button onClick={() => openPreview(reference, currentMatch!.label)}><img src={reference} alt={`${currentMatch?.label} ${t('reference', '参考图')}`} onError={event => { const fallback = materials.find(material => material.id === currentMatch?.label)?.image; if (fallback && event.currentTarget.getAttribute('src') !== fallback) event.currentTarget.src = fallback; else event.currentTarget.style.visibility = 'hidden'; }} /><span>{t('Reference specimen', '参考样本')}</span></button> : <div className="reference-missing">{t('No reference image for this candidate.', '此候选没有参考图像。')}</div>}</div>
+              <p className="result-caveat">{t('Confidence is the model’s probability for a class, not a verified measure of material composition or accuracy.', '置信度表示模型对类别的预测概率，不等同于材质成分或经验证的准确率。')}</p>
+              <button className="button secondary export-result" onClick={() => downloadJson(result, `leathermind-${result.id}.json`)}><Download size={17} />{t('Export result', '导出结果')}</button>
+            </> : <div className="result-empty"><FlaskConical size={40} strokeWidth={1.2} /><h3>{t('Awaiting a specimen', '等待样本')}</h3><p>{t('Your candidate classes and reference comparison will appear here after classification.', '分类完成后，此处会显示候选类别与参考图对比。')}</p><div className="capture-guidance"><h4>{t('For a reliable input', '图像采集建议')}</h4><p>{t('Use diffuse light. Keep the image sharp. Fill the frame with one material and avoid seams or labels.', '使用均匀散射光，保持对焦清晰，让单一材质填满画面，并避开接缝和标签。')}</p></div></div>}
+          </section></div>
+        </>}
+
+        {view === 'archive' && <><div className="page-heading"><h1 ref={headingRef} tabIndex={-1}>{t('Material archive', '材质档案')}</h1><p>{t('Browse the reference specimens used by the texture classifier. Identifiers represent dataset classes.', '浏览纹理分类器的真实参考样本。编号对应数据集中的类别。')}</p></div><div className="filter-toolbar"><label className="search-input"><Search size={18} /><span className="visually-hidden">{t('Search material identifier', '搜索材质编号')}</span><input value={archiveQuery} onChange={event => setArchiveQuery(event.target.value)} placeholder={t('Search class identifier…', '搜索类别编号…')} /></label><div className="segmented-control"><button aria-pressed={archiveFilter === 'all'} className={archiveFilter === 'all' ? 'selected' : ''} onClick={() => setArchiveFilter('all')}>{t('All materials', '全部材质')}</button><button aria-pressed={archiveFilter === 'favorites'} className={archiveFilter === 'favorites' ? 'selected' : ''} onClick={() => setArchiveFilter('favorites')}><Star size={15} />{t('Favorites', '收藏')}</button></div><span className="filter-count">{filteredMaterials.length} {t('classes', '个类别')}</span></div>{filteredMaterials.length ? <><div className="material-grid archive-grid">{filteredMaterials.slice(archivePage * 12, archivePage * 12 + 12).map(materialCard)}</div><div className="pagination"><span>{t('Page', '页')} {archivePage + 1} / {pageCount}</span><button className="button secondary" disabled={archivePage === 0} onClick={() => { setArchivePage(page => page - 1); headingRef.current?.scrollIntoView(); }}><ChevronLeft size={17} />{t('Previous', '上一页')}</button><button className="button secondary" disabled={archivePage + 1 >= pageCount} onClick={() => { setArchivePage(page => page + 1); headingRef.current?.scrollIntoView(); }}>{t('Next', '下一页')}<ChevronRight size={17} /></button></div></> : <div className="empty-state"><Search size={32} /><h2>{t('No specimens found', '未找到样本')}</h2><p>{archiveFilter === 'favorites' ? t('Favorite a specimen using the star next to its identifier.', '点击样本编号旁的星标添加收藏。') : t('Try another class identifier or clear the search.', '请尝试其他类别编号或清空搜索。')}</p><button className="button secondary" onClick={() => { setArchiveQuery(''); setArchiveFilter('all'); }}>{t('Show all materials', '显示全部材质')}</button></div>}</>}
+
+        {view === 'history' && <><div className="page-heading"><h1 ref={headingRef} tabIndex={-1}>{t('Scan history', '识别历史')}</h1><p>{t('Review classifications, annotate findings, and export your records.', '回顾分类结果，添加研究备注，并导出识别记录。')}</p></div><div className="history-heading-controls"><span className="storage-label"><FolderOpen size={17} />{syncMode === 'server' ? t('Shared archive + browser cache', '共享档案与浏览器缓存') : t('Stored in this browser', '存储在此浏览器')} · {scans.length} {t('records', '条记录')}</span><div><button className="button secondary" onClick={() => void refreshHistory()}>{t('Refresh', '刷新')}</button><button className="button secondary" disabled={!scans.length} onClick={() => downloadJson(scans, 'leathermind-history.json')}><Download size={17} />{t('Export all', '导出全部')}</button></div></div><div className="filter-toolbar"><label className="search-input"><Search size={18} /><span className="visually-hidden">{t('Search history', '搜索历史')}</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder={t('Search class, note or date…', '搜索类别、备注或日期…')} /></label><label className="sort-control">{t('Sort by', '排序')}<select value={sort} onChange={event => setSort(event.target.value as typeof sort)}><option value="newest">{t('Most recent', '最近时间')}</option><option value="confidence">{t('Confidence', '置信度')}</option><option value="name">{t('Class identifier', '类别编号')}</option></select></label></div>
+          {scans.length > 0 && <div className="selection-toolbar"><label><input type="checkbox" checked={filteredScans.length > 0 && filteredScans.every(scan => selectedIds.includes(scan.id))} onChange={event => setSelectedIds(event.target.checked ? [...new Set([...selectedIds, ...filteredScans.map(scan => scan.id)])] : selectedIds.filter(id => !filteredScans.some(scan => scan.id === id)))} />{t('Select visible results', '选择可见结果')}</label><button className="text-button danger-text" disabled={!selectedIds.length} onClick={() => setDeleteIds(selectedIds)}><Trash2 size={16} />{t('Delete selected', '删除所选')} {selectedIds.length ? `(${selectedIds.length})` : ''}</button></div>}
+          {filteredScans.length ? <div className="history-list">{filteredScans.map(scan => <article className="history-item" key={scan.id}><div className="history-item-main"><label className="record-checkbox"><span className="visually-hidden">{t('Select', '选择')} {scan.matches[0].label} {date(scan.timestamp)}</span><input type="checkbox" checked={selectedIds.includes(scan.id)} onChange={event => setSelectedIds(items => event.target.checked ? [...items, scan.id] : items.filter(id => id !== scan.id))} /></label><button className="history-thumbnail" onClick={() => openPreview(scan.imageUrl, scan.matches[0].label)}><img src={scan.imageUrl} alt={`${scan.matches[0].label} ${t('scan', '识别图像')}`} width="88" height="88" loading="lazy" /></button><button className="history-result-link" onClick={() => { setResult(scan); setDraft(scan.imageUrl); setFileName(t('Saved specimen', '已保存样本')); setMatchIndex(0); navigate('classify'); }}><h2>{scan.matches[0].label}</h2><span>{date(scan.timestamp)} · {scan.device || t('Unspecified device', '未记录设备')}</span></button><div className="history-confidence"><strong>{scan.matches[0].confidence.toFixed(2)}%</strong><span>{t('confidence', '置信度')}</span></div><button className="icon-button danger-text" aria-label={`${t('Delete record', '删除记录')} ${scan.matches[0].label}`} onClick={() => setDeleteIds([scan.id])}><Trash2 size={17} /></button></div><label className="note-field"><span>{t('Research note', '研究备注')}</span><input key={`${scan.id}-${scan.note || ''}`} defaultValue={scan.note || ''} maxLength={300} placeholder={t('Add a note about this specimen…', '添加样本备注…')} onBlur={event => void updateNote(scan, event.target.value)} onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); }} /></label></article>)}</div> : <div className="empty-state"><History size={36} /><h2>{scans.length ? t('No matching records', '没有匹配记录') : t('No classifications yet', '尚无分类记录')}</h2><p>{scans.length ? t('Try another class, note or date.', '请尝试其他类别、备注或日期。') : t('Run your first classification to begin a specimen archive.', '运行首次分类，开始建立样本记录。')}</p><button className="button primary" onClick={() => scans.length ? setQuery('') : navigate('classify')}>{scans.length ? t('Clear search', '清空搜索') : t('Classify a sample', '识别样本')}<ArrowRight size={17} /></button></div>}
+        </>}
+
+        {view === 'settings' && <><div className="page-heading"><h1 ref={headingRef} tabIndex={-1}>{t('Preferences', '应用偏好')}</h1><p>{t('Configure your workspace, language and result storage.', '配置工作台主题、语言与识别结果存储。')}</p></div><div className="settings-list"><section><h2>{t('Workspace', '工作台')}</h2><div className="setting-row"><label htmlFor="theme-select">{t('Appearance', '外观')}<span>{t('The material archive supports dark and light themes.', '材质档案支持深色与浅色主题。')}</span></label><select id="theme-select" value={theme} onChange={event => setTheme(event.target.value as typeof theme)}><option value="dark">{t('Dark', '深色')}</option><option value="light">{t('Light', '浅色')}</option></select></div><div className="setting-row"><label htmlFor="language-select">{t('Interface language', '界面语言')}<span>{t('English is the default for new sessions.', '新用户默认使用英文界面。')}</span></label><select id="language-select" value={language} onChange={event => setLanguage(event.target.value as Language)}><option value="en">English</option><option value="zh">中文</option></select></div></section><section><h2>{t('Recognition records', '识别记录')}</h2><div className="setting-row"><label htmlFor="autosave">{t('Automatically save results', '自动保存结果')}<span>{t('Store successful classifications in your scan history.', '将成功分类的结果保存到识别历史。')}</span></label><input id="autosave" type="checkbox" className="switch" checked={autoSave} onChange={event => setAutoSave(event.target.checked)} /></div><div className="setting-row"><div>{t('Storage location', '存储位置')}<span>{syncMode === 'server' ? t('Records are shared with other visitors to this service and cached in your browser.', '记录与此服务的其他访问者共享，并缓存在此浏览器中。') : t('Records are available on this browser only.', '记录仅在此浏览器中可用。')}</span></div><button className="button secondary" onClick={() => navigate('history')}>{t('Manage records', '管理记录')}<ArrowUpRight size={16} /></button></div></section><section><h2>{t('Model information', '模型信息')}</h2><div className="model-information"><p><span>{t('Reference classes', '参考类别')}</span><strong>{materials.length}</strong></p><p><span>{t('Classification method', '分类方法')}</span><strong>ResNet50</strong></p><p><span>{t('Service connection', '服务连接')}</span><strong>{status}</strong></p></div><p className="setting-explanation">{t('Dataset class identifiers are reference labels. They do not independently establish a leather’s commercial name, chemical composition or quality grade.', '数据集类别编号是参考标签，不能独立确定皮革的商业名称、化学成分或质量等级。')}</p></section></div></>}
+      </main><footer className="footer"><span>LeatherMind <span className="footer-separator">/</span> {t('Leather texture classification', '皮革纹理分类')}</span><span>{t('Reference-based material analysis', '基于参考样本的材质分析')}</span></footer>
     </div>
-  );
-}
-
-function ToggleRow({ label, enabled, onToggle }: { label: string; enabled: boolean; onToggle: () => void }) {
-  return (
-    <button
-      onClick={onToggle}
-      className="w-full flex items-center justify-between p-4 hover:bg-surface-container-high/40 transition-colors"
-    >
-      <p className="body-md text-left">{label}</p>
-      <span className={`w-9 h-5 rounded-full relative transition-colors ${enabled ? 'bg-primary' : 'bg-surface-container-highest'}`}>
-        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-background transition-all ${enabled ? 'left-4' : 'left-0.5'}`} />
-      </span>
-    </button>
-  );
+    {preview && <Dialog title={preview.title} close={() => setPreview(null)} className="image-dialog"><img src={preview.src} alt={preview.title} /></Dialog>}
+    {deleteIds && <Dialog title={t('Delete classification records?', '删除识别记录？')} close={() => setDeleteIds(null)}><p>{t(`Delete ${deleteIds.length} record${deleteIds.length === 1 ? '' : 's'}${syncMode === 'server' ? ' from the shared archive and this browser' : ' from this browser'}? This cannot be undone.`, `删除${syncMode === 'server' ? '共享档案与此浏览器中的' : '此浏览器中的'} ${deleteIds.length} 条记录？此操作无法撤销。`)}</p><div className="dialog-actions"><button className="button secondary" onClick={() => setDeleteIds(null)}>{t('Keep records', '保留记录')}</button><button className="button danger" onClick={() => void deleteScans(deleteIds)}><Trash2 size={17} />{t('Delete records', '删除记录')}</button></div></Dialog>}
+  </div></MotionConfig>;
 }
